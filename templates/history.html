@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}History & Reports - Deepfake Detection{% endblock %}
+
+{% block content %}
+<section class="history-section">
+    <div class="container">
+        <div class="history-header">
+            <h1>Analysis History & Reports</h1>
+            <p>View and download your previous audio analysis reports</p>
+            <div class="history-actions">
+                <button class="btn btn-secondary" id="clearHistory">
+                    <i class="fas fa-trash-alt"></i> Clear All History
+                </button>
+                <button class="btn btn-primary" id="downloadAllReports">
+                    <i class="fas fa-download"></i> Download All Reports
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter and Sort -->
+        <div class="history-controls">
+            <div class="filter-group">
+                <label for="filterResult">Filter by Result:</label>
+                <select id="filterResult" class="filter-select">
+                    <option value="all">All Results</option>
+                    <option value="real">Real Only</option>
+                    <option value="fake">Fake Only</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="sortBy">Sort by:</label>
+                <select id="sortBy" class="filter-select">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="confidence-high">Highest Confidence</option>
+                    <option value="confidence-low">Lowest Confidence</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- History List -->
+        <div class="history-container" id="historyContainer">
+            <!-- Empty state -->
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-history"></i>
+                <h3>No Analysis History</h3>
+                <p>Your audio analysis history will appear here</p>
+                <a href="{{ url_for('upload_page') }}" class="btn btn-primary">
+                    <i class="fas fa-upload"></i> Analyze Audio
+                </a>
+            </div>
+
+            <!-- History items will be dynamically added here -->
+            <div class="history-list" id="historyList">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination" style="display: none;">
+            <button class="btn btn-secondary" id="prevPage">
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span class="page-info" id="pageInfo">Page 1 of 1</span>
+            <button class="btn btn-secondary" id="nextPage">
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Report Detail Modal -->
+<div class="modal" id="reportModal" style="display: none;">
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Analysis Report Details</h2>
+            <button class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Report details will be loaded here -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="modalCloseBtn">Close</button>
+            <button class="btn btn-primary" id="downloadThisReport">
+                <i class="fas fa-download"></i> Download Report
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %}

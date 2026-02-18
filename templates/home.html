@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Deepfake Audio Detection{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 class="hero-title">
+                    Detect Audio <span class="gradient-text">Deepfakes</span> with AI
+                </h1>
+                <p class="hero-subtitle">
+                    Advanced hybrid detection system combining Machine Learning and Deep Learning to identify synthetic voice manipulation with high accuracy.
+                </p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-upload"></i> Start Detection
+                    </a>
+                    <a href="{{ url_for('history_page') }}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-info-circle"></i> Learn More
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number">95%+</div>
+                        <div class="stat-label">Accuracy</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">2</div>
+                        <div class="stat-label">AI Models</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">&lt;5s</div>
+                        <div class="stat-label">Detection Time</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="visual-card">
+                    <div class="waveform-container">
+                        <div class="waveform-bar" style="height: 60%;"></div>
+                        <div class="waveform-bar" style="height: 85%;"></div>
+                        <div class="waveform-bar" style="height: 45%;"></div>
+                        <div class="waveform-bar" style="height: 95%;"></div>
+                        <div class="waveform-bar" style="height: 70%;"></div>
+                        <div class="waveform-bar" style="height: 55%;"></div>
+                        <div class="waveform-bar" style="height: 80%;"></div>
+                        <div class="waveform-bar" style="height: 40%;"></div>
+                        <div class="waveform-bar" style="height: 90%;"></div>
+                        <div class="waveform-bar" style="height: 65%;"></div>
+                    </div>
+                    <div class="scan-line"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features">
+    <div class="container">
+        <div class="section-header">
+            <h2>How It Works</h2>
+            <p>Our hybrid approach combines multiple AI techniques for superior detection</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3>Machine Learning</h3>
+                <p>Random Forest classifier analyzes MFCC, spectral, and temporal features extracted from audio signals.</p>
+                <div class="feature-tech">
+                    <span class="tech-badge">Scikit-learn</span>
+                    <span class="tech-badge">Librosa</span>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <h3>Deep Learning</h3>
+                <p>Convolutional Neural Network processes mel spectrograms to detect subtle patterns in voice synthesis.</p>
+                <div class="feature-tech">
+                    <span class="tech-badge">TensorFlow</span>
+                    <span class="tech-badge">Keras</span>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <h3>Hybrid Fusion</h3>
+                <p>Intelligent combination of both models using weighted averaging for enhanced accuracy and reliability.</p>
+                <div class="feature-tech">
+                    <span class="tech-badge">Ensemble</span>
+                    <span class="tech-badge">Stacking</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- What is Deepfake Section -->
+<section class="deepfake-info">
+    <div class="container">
+        <div class="info-content">
+            <div class="info-text">
+                <h2>What are Audio Deepfakes?</h2>
+                <p>
+                    Audio deepfakes are synthetic voice recordings created using artificial intelligence and machine learning techniques. These can convincingly mimic real human voices, making it difficult to distinguish between authentic and fabricated audio.
+                </p>
+                <div class="info-points">
+                    <div class="info-point">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <h4>Growing Threat</h4>
+                            <p>Voice cloning technology is becoming increasingly accessible and sophisticated.</p>
+                        </div>
+                    </div>
+                    <div class="info-point">
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <h4>Detection Solution</h4>
+                            <p>Our AI system analyzes acoustic patterns that are invisible to the human ear.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="info-visual">
+                <div class="comparison-box">
+                    <div class="comparison-item real">
+                        <i class="fas fa-check-circle"></i>
+                        <h4>Real Audio</h4>
+                        <div class="audio-bars">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                        <p>Natural voice patterns</p>
+                    </div>
+                    <div class="comparison-divider">
+                        <i class="fas fa-arrows-alt-h"></i>
+                    </div>
+                    <div class="comparison-item fake">
+                        <i class="fas fa-times-circle"></i>
+                        <h4>Fake Audio</h4>
+                        <div class="audio-bars">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                        <p>Synthetic artifacts</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content">
+            <h2>Ready to Verify Your Audio?</h2>
+            <p>Upload your audio file and get instant deepfake detection results</p>
+            <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-upload"></i> Start Now
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Audio - Deepfake Detection{% endblock %}
+
+{% block content %}
+<section class="upload-section">
+    <div class="container">
+        <div class="upload-header">
+            <h1>Upload Audio for Analysis</h1>
+            <p>Support for WAV, MP3, FLAC, and OGG formats • Maximum 60 seconds • 16MB limit</p>
+        </div>
+
+        <!-- Upload Area -->
+        <div class="upload-container">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3>Drag & Drop Audio File</h3>
+                <p>or</p>
+                <label for="audioFile" class="btn btn-primary">
+                    <i class="fas fa-folder-open"></i> Browse Files
+                </label>
+                <input type="file" id="audioFile" accept=".wav,.mp3,.flac,.ogg" hidden>
+                <div class="upload-hint">
+                    <i class="fas fa-info-circle"></i>
+                    Supported formats: WAV, MP3, FLAC, OGG
+                </div>
+            </div>
+
+            <!-- File Info -->
+            <div class="file-info" id="fileInfo" style="display: none;">
+                <div class="file-details">
+                    <div class="file-icon">
+                        <i class="fas fa-file-audio"></i>
+                    </div>
+                    <div class="file-meta">
+                        <h4 id="fileName">-</h4>
+                        <p id="fileSize">-</p>
+                    </div>
+                    <button class="btn-remove" id="removeFile">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Audio Player -->
+                <div class="audio-player">
+                    <audio id="audioPlayer" controls></audio>
+                </div>
+
+                <!-- Analyze Button -->
+                <button class="btn btn-primary btn-lg btn-block" id="analyzeBtn">
+                    <i class="fas fa-search"></i> Analyze Audio
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-state" id="loadingState" style="display: none;">
+                <div class="loader-container">
+                    <div class="loader"></div>
+                    <h3>Analyzing Audio...</h3>
+                    <p id="loadingText">Processing with hybrid AI models</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="loading-steps">
+                        <div class="step" id="step1">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Extracting features</span>
+                        </div>
+                        <div class="step" id="step2">
+                            <i class="fas fa-circle"></i>
+                            <span>ML model analysis</span>
+                        </div>
+                        <div class="step" id="step3">
+                            <i class="fas fa-circle"></i>
+                            <span>DL model analysis</span>
+                        </div>
+                        <div class="step" id="step4">
+                            <i class="fas fa-circle"></i>
+                            <span>Generating results</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="results-container" id="resultsContainer" style="display: none;">
+                <div class="result-header">
+                    <div class="result-badge" id="resultBadge">
+                        <i class="fas fa-shield-alt"></i>
+                        <span id="resultLabel">REAL</span>
+                    </div>
+                    <h2>Analysis Complete</h2>
+                    <p class="result-subtitle">Hybrid AI Detection Result</p>
+                </div>
+
+                <!-- Main Result -->
+                <div class="result-main">
+                    <div class="confidence-meter">
+                        <div class="meter-label">
+                            <span>Confidence Score</span>
+                            <span class="confidence-value" id="confidenceValue">0%</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill" id="meterFill"></div>
+                        </div>
+                        <p class="meter-description">
+                            Higher confidence indicates greater certainty in the prediction
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Mel Spectrogram Visualization -->
+                <div class="spectrogram-section" id="spectrogramSection" style="display: none;">
+                    <h3><i class="fas fa-chart-area"></i> Mel Spectrogram Analysis</h3>
+                    
+                    <div class="spectrogram-audio-container">
+                        <!-- Audio Player -->
+                        <div class="audio-playback">
+                            <h4><i class="fas fa-headphones"></i> Audio Playback</h4>
+                            <audio id="spectrogramAudioPlayer" controls></audio>
+                            <p class="audio-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Play audio to see which part is being analyzed in the spectrogram
+                            </p>
+                        </div>
+                        
+                        <!-- Spectrogram Image -->
+                        <div class="spectrogram-display">
+                            <h4><i class="fas fa-wave-square"></i> Frequency Analysis</h4>
+                            <div class="spectrogram-container">
+                                <img id="spectrogramImage" src="" alt="Mel Spectrogram" class="spectrogram-img">
+                                <div class="playback-indicator" id="playbackIndicator"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="spectrogram-info">
+                        <i class="fas fa-info-circle"></i>
+                        Visual representation of the audio's frequency content over time. Deepfake audio often shows unnatural patterns in the spectrogram.
+                    </p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="result-actions">
+                    <button class="btn btn-primary" id="analyzeAnother">
+                        <i class="fas fa-redo"></i> Analyze Another
+                    </button>
+                    <button class="btn btn-secondary" id="downloadReport">
+                        <i class="fas fa-download"></i> Download Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText">An error occurred</span>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}
