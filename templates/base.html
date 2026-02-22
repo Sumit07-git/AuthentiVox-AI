@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Deepfake Audio Detection{% endblock %}</title>
+    <title>{% block title %}AuthentiVox{% endblock %}</title>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -46,7 +47,7 @@
         <div class="container">
             <div class="nav-brand">
                 <i class="fas fa-shield-alt"></i>
-                <span>AuthentiVox AI</span>
+                <span>Authenti<span class="gradient-text">Vox</span> AI</span>
             </div>
             <ul class="nav-menu">
                 <li><a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">
@@ -90,8 +91,8 @@
                     <h4>Resources</h4>
                     <ul>
                         <li><a href="#"><i class="fas fa-book"></i> Documentation</a></li>
-                        <li><a href="#"><i class="fab fa-github"></i> GitHub</a></li>
-                        <li><a href="#"><i class="fas fa-envelope"></i> Contact</a></li>
+                        <li><a href="https://github.com/Sumit07-git"><i class="fab fa-github"></i> GitHub</a></li>
+                        <li><a href="sumitsamal08@gmail.com"><i class="fas fa-envelope"></i> Contact</a></li>
                     </ul>
                 </div>
             </div>

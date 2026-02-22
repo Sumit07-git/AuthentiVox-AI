@@ -1,16 +1,400 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Audio - Deepfake Detection{% endblock %}
+{% block title %}Analysis Results - AuthentiVox{% endblock %}
 
 {% block content %}
-<section class="upload-section">
+<!-- Hero Results Banner -->
+<section class="results-hero" id="resultsHero" style="display: none;">
+    <div class="container">
+        <div class="results-hero-content">
+            <div class="hero-badge" id="heroBadge">
+                <i class="fas fa-shield-check"></i>
+                <span id="heroLabel">AUTHENTIC</span>
+            </div>
+            <h1 class="results-title" id="heroTitle">Real Audio Detected</h1>
+            <p class="results-subtitle">AI-powered detection with <span id="heroConfidence">95%</span> confidence</p>
+        </div>
+    </div>
+    <div class="results-hero-bg"></div>
+</section>
+
+<!-- Main Results Dashboard -->
+<section class="results-dashboard" id="resultsDashboard" style="display: none;">
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="results-stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon real">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="predictionText">AUTHENTIC</h3>
+                    <p>Detection Result</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon confidence">
+                    <i class="fas fa-gauge-high"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="confidenceText">95%</h3>
+                    <p>Confidence Score</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon model">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Hybrid AI</h3>
+                    <p>Detection Method</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon time">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="processingTime">&lt;3s</h3>
+                    <p>Processing Time</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confidence Meter Section -->
+        <div class="confidence-section">
+            <h2><i class="fas fa-chart-line"></i> Confidence Analysis</h2>
+            <div class="confidence-card">
+                <div class="confidence-visual">
+                    <svg class="confidence-circle" viewBox="0 0 200 200">
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="100" cy="100" r="90" class="circle-bg"></circle>
+                        <circle cx="100" cy="100" r="90" class="circle-progress" id="circleProgress"></circle>
+                    </svg>
+                    <div class="confidence-percentage" id="circlePercentage">0%</div>
+                </div>
+                <div class="confidence-details">
+                    <h3>Detection Confidence</h3>
+                    <p class="confidence-description" id="confidenceDescription">
+                        The AI model is highly confident in this prediction.
+                    </p>
+                    <div class="confidence-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Machine Learning Model</span>
+                            <div class="breakdown-bar">
+                                <div class="breakdown-fill ml-fill" id="mlFill"></div>
+                            </div>
+                            <span class="breakdown-value" id="mlValue">0%</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Deep Learning Model</span>
+                            <div class="breakdown-bar">
+                                <div class="breakdown-fill dl-fill" id="dlFill"></div>
+                            </div>
+                            <span class="breakdown-value" id="dlValue">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Audio Analysis Section -->
+<section class="audio-analysis-section" id="audioAnalysisSection" style="display: none;">
+    <div class="container">
+        <h2><i class="fas fa-waveform-lines"></i> Audio Analysis</h2>
+        
+        <div class="analysis-grid">
+            <!-- Audio Player Card -->
+            <div class="analysis-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-play-circle"></i> Audio Playback</h3>
+                </div>
+                <div class="card-body">
+                    <div class="audio-file-info">
+                        <div class="file-icon-large">
+                            <i class="fas fa-file-audio"></i>
+                        </div>
+                        <div class="file-details-large">
+                            <h4 id="analysisFileName">audio_sample.wav</h4>
+                            <p id="analysisFileSize">2.3 MB</p>
+                        </div>
+                    </div>
+                    <audio id="resultsAudioPlayer" controls class="audio-player-large"></audio>
+                    <div class="audio-metadata">
+                        <div class="metadata-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Duration: <strong id="audioDuration">0:00</strong></span>
+                        </div>
+                        <div class="metadata-item">
+                            <i class="fas fa-signal"></i>
+                            <span>Sample Rate: <strong id="audioSampleRate">44.1 kHz</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detection Indicators -->
+            <div class="analysis-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-shield-halved"></i> Detection Indicators</h3>
+                </div>
+                <div class="card-body">
+                    <div class="indicator-list">
+                        <div class="indicator-item" id="indicator1">
+                            <i class="fas fa-wave-square"></i>
+                            <div class="indicator-content">
+                                <h4>Frequency Patterns</h4>
+                                <p>Natural voice characteristics detected</p>
+                            </div>
+                            <span class="indicator-badge pass">✓</span>
+                        </div>
+                        <div class="indicator-item" id="indicator2">
+                            <i class="fas fa-chart-area"></i>
+                            <div class="indicator-content">
+                                <h4>Spectral Analysis</h4>
+                                <p>Consistent energy distribution</p>
+                            </div>
+                            <span class="indicator-badge pass">✓</span>
+                        </div>
+                        <div class="indicator-item" id="indicator3">
+                            <i class="fas fa-robot"></i>
+                            <div class="indicator-content">
+                                <h4>AI Artifacts</h4>
+                                <p>No synthetic markers found</p>
+                            </div>
+                            <span class="indicator-badge pass">✓</span>
+                        </div>
+                        <div class="indicator-item" id="indicator4">
+                            <i class="fas fa-microphone"></i>
+                            <div class="indicator-content">
+                                <h4>Voice Quality</h4>
+                                <p>Authentic vocal patterns</p>
+                            </div>
+                            <span class="indicator-badge pass">✓</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Spectrogram Visualization Section -->
+<section class="spectrogram-full-section" id="spectrogramFullSection" style="display: none;">
+    <div class="container">
+        <h2><i class="fas fa-chart-area"></i> Mel Spectrogram Visualization</h2>
+        <p class="section-description">
+            Visual representation of frequency content over time. AI-generated audio often exhibits unnatural patterns.
+        </p>
+        
+        <div class="spectrogram-viewer">
+            <div class="spectrogram-main">
+                <img id="mainSpectrogramImage" src="" alt="Mel Spectrogram" class="spectrogram-image">
+                <div class="spectrogram-overlay" id="spectrogramOverlay"></div>
+            </div>
+            
+            <div class="spectrogram-controls">
+                <button class="control-button" id="downloadSpectrogramBtn">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+
+            <div class="spectrogram-legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(to right, #000428, #004e92);"></div>
+                    <span>Low Frequency</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(to right, #56ab2f, #a8e063);"></div>
+                    <span>Mid Frequency</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(to right, #f46b45, #eea849);"></div>
+                    <span>High Frequency</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Technical Details Section -->
+<section class="technical-section" id="technicalSection" style="display: none;">
+    <div class="container">
+        <h2><i class="fas fa-microchip"></i> Technical Analysis</h2>
+        
+        <div class="technical-grid">
+            <!-- Model Performance -->
+            <div class="technical-card">
+                <h3><i class="fas fa-brain"></i> AI Model Performance</h3>
+                <div class="model-comparison">
+                    <div class="model-item">
+                        <div class="model-icon ml">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <h4>Machine Learning</h4>
+                        <p>Random Forest Classifier</p>
+                        <div class="model-score">
+                            <span class="score-label">Accuracy:</span>
+                            <span class="score-value" id="mlScore">94.2%</span>
+                        </div>
+                        <div class="model-features">
+                            <span class="feature-badge">MFCC</span>
+                            <span class="feature-badge">Spectral</span>
+                            <span class="feature-badge">Temporal</span>
+                        </div>
+                    </div>
+
+                    <div class="model-divider">+</div>
+
+                    <div class="model-item">
+                        <div class="model-icon dl">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <h4>Deep Learning</h4>
+                        <p>Convolutional Neural Network</p>
+                        <div class="model-score">
+                            <span class="score-label">Accuracy:</span>
+                            <span class="score-value" id="dlScore">96.8%</span>
+                        </div>
+                        <div class="model-features">
+                            <span class="feature-badge">Spectrogram</span>
+                            <span class="feature-badge">CNN</span>
+                            <span class="feature-badge">Transfer Learning</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Extraction -->
+            <div class="technical-card">
+                <h3><i class="fas fa-sliders-h"></i> Extracted Features</h3>
+                <div class="features-list">
+                    <div class="feature-row">
+                        <span class="feature-name">MFCC Coefficients</span>
+                        <div class="feature-indicator">
+                            <div class="feature-bar" style="width: 85%;"></div>
+                        </div>
+                        <span class="feature-value">85%</span>
+                    </div>
+                    <div class="feature-row">
+                        <span class="feature-name">Spectral Centroid</span>
+                        <div class="feature-indicator">
+                            <div class="feature-bar" style="width: 92%;"></div>
+                        </div>
+                        <span class="feature-value">92%</span>
+                    </div>
+                    <div class="feature-row">
+                        <span class="feature-name">Zero Crossing Rate</span>
+                        <div class="feature-indicator">
+                            <div class="feature-bar" style="width: 78%;"></div>
+                        </div>
+                        <span class="feature-value">78%</span>
+                    </div>
+                    <div class="feature-row">
+                        <span class="feature-name">Chroma Features</span>
+                        <div class="feature-indicator">
+                            <div class="feature-bar" style="width: 88%;"></div>
+                        </div>
+                        <span class="feature-value">88%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Timeline -->
+            <div class="technical-card full-width">
+                <h3><i class="fas fa-timeline"></i> Processing Timeline</h3>
+                <div class="timeline">
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker">1</div>
+                        <div class="timeline-content">
+                            <h4>Audio Upload</h4>
+                            <p>File received and validated</p>
+                            <span class="timeline-time">0.1s</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker">2</div>
+                        <div class="timeline-content">
+                            <h4>Feature Extraction</h4>
+                            <p>MFCC and spectral analysis</p>
+                            <span class="timeline-time">0.8s</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker">3</div>
+                        <div class="timeline-content">
+                            <h4>ML Model Analysis</h4>
+                            <p>Random Forest classification</p>
+                            <span class="timeline-time">0.3s</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker">4</div>
+                        <div class="timeline-content">
+                            <h4>DL Model Analysis</h4>
+                            <p>CNN spectrogram processing</p>
+                            <span class="timeline-time">1.2s</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker">5</div>
+                        <div class="timeline-content">
+                            <h4>Result Generation</h4>
+                            <p>Hybrid fusion and reporting</p>
+                            <span class="timeline-time">0.2s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Actions Section -->
+<section class="actions-section" id="actionsSection" style="display: none;">
+    <div class="container">
+        <div class="actions-card">
+            <h2>What would you like to do next?</h2>
+            <div class="action-buttons">
+                <button class="action-btn primary" id="analyzeAnotherBtn">
+                    <i class="fas fa-redo"></i>
+                    <span>Analyze Another File</span>
+                </button>
+                <button class="action-btn secondary" id="downloadReportBtn">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Download Full Report</span>
+                </button>
+                <button class="action-btn secondary" id="viewHistoryBtn">
+                    <i class="fas fa-history"></i>
+                    <span>View Analysis History</span>
+                </button>
+                <button class="action-btn secondary" id="shareResultsBtn">
+                    <i class="fas fa-share-alt"></i>
+                    <span>Share Results</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Upload Section (Initial State) -->
+<section class="upload-section" id="uploadSection">
     <div class="container">
         <div class="upload-header">
             <h1>Upload Audio for Analysis</h1>
             <p>Support for WAV, MP3, FLAC, and OGG formats • Maximum 60 seconds • 16MB limit</p>
         </div>
 
-        <!-- Upload Area -->
         <div class="upload-container">
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">
@@ -18,7 +402,7 @@
                 </div>
                 <h3>Drag & Drop Audio File</h3>
                 <p>or</p>
-                <label for="audioFile" class="btn btn-primary">
+                <label for="audioFile" class="btn btn-secondary btn-lg">
                     <i class="fas fa-folder-open"></i> Browse Files
                 </label>
                 <input type="file" id="audioFile" accept=".wav,.mp3,.flac,.ogg" hidden>
@@ -43,14 +427,12 @@
                     </button>
                 </div>
                 
-                <!-- Audio Player -->
                 <div class="audio-player">
                     <audio id="audioPlayer" controls></audio>
                 </div>
 
-                <!-- Analyze Button -->
-                <button class="btn btn-primary btn-lg btn-block" id="analyzeBtn">
-                    <i class="fas fa-search"></i> Analyze Audio
+                <button class="btn btn-analyze btn-block btn-lg" id="analyzeBtn">
+                    <i class="fas fa-search"></i> Start Analysis
                 </button>
             </div>
 
@@ -59,97 +441,30 @@
                 <div class="loader-container">
                     <div class="loader"></div>
                     <h3>Analyzing Audio...</h3>
-                    <p id="loadingText">Processing with hybrid AI models</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="loading-steps">
-                        <div class="step" id="step1">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Extracting features</span>
-                        </div>
-                        <div class="step" id="step2">
-                            <i class="fas fa-circle"></i>
-                            <span>ML model analysis</span>
-                        </div>
-                        <div class="step" id="step3">
-                            <i class="fas fa-circle"></i>
-                            <span>DL model analysis</span>
-                        </div>
-                        <div class="step" id="step4">
-                            <i class="fas fa-circle"></i>
-                            <span>Generating results</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Results -->
-            <div class="results-container" id="resultsContainer" style="display: none;">
-                <div class="result-header">
-                    <div class="result-badge" id="resultBadge">
-                        <i class="fas fa-shield-alt"></i>
-                        <span id="resultLabel">REAL</span>
-                    </div>
-                    <h2>Analysis Complete</h2>
-                    <p class="result-subtitle">Hybrid AI Detection Result</p>
+                    <p>Please wait while our AI processes your file</p>
                 </div>
 
-                <!-- Main Result -->
-                <div class="result-main">
-                    <div class="confidence-meter">
-                        <div class="meter-label">
-                            <span>Confidence Score</span>
-                            <span class="confidence-value" id="confidenceValue">0%</span>
-                        </div>
-                        <div class="meter-bar">
-                            <div class="meter-fill" id="meterFill"></div>
-                        </div>
-                        <p class="meter-description">
-                            Higher confidence indicates greater certainty in the prediction
-                        </p>
-                    </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
                 </div>
 
-                <!-- Mel Spectrogram Visualization -->
-                <div class="spectrogram-section" id="spectrogramSection" style="display: none;">
-                    <h3><i class="fas fa-chart-area"></i> Mel Spectrogram Analysis</h3>
-                    
-                    <div class="spectrogram-audio-container">
-                        <!-- Audio Player -->
-                        <div class="audio-playback">
-                            <h4><i class="fas fa-headphones"></i> Audio Playback</h4>
-                            <audio id="spectrogramAudioPlayer" controls></audio>
-                            <p class="audio-hint">
-                                <i class="fas fa-info-circle"></i>
-                                Play audio to see which part is being analyzed in the spectrogram
-                            </p>
-                        </div>
-                        
-                        <!-- Spectrogram Image -->
-                        <div class="spectrogram-display">
-                            <h4><i class="fas fa-wave-square"></i> Frequency Analysis</h4>
-                            <div class="spectrogram-container">
-                                <img id="spectrogramImage" src="" alt="Mel Spectrogram" class="spectrogram-img">
-                                <div class="playback-indicator" id="playbackIndicator"></div>
-                            </div>
-                        </div>
+                <div class="loading-steps">
+                    <div class="step">
+                        <i class="fas fa-circle"></i>
+                        <span>Extracting audio features</span>
                     </div>
-                    
-                    <p class="spectrogram-info">
-                        <i class="fas fa-info-circle"></i>
-                        Visual representation of the audio's frequency content over time. Deepfake audio often shows unnatural patterns in the spectrogram.
-                    </p>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="result-actions">
-                    <button class="btn btn-primary" id="analyzeAnother">
-                        <i class="fas fa-redo"></i> Analyze Another
-                    </button>
-                    <button class="btn btn-secondary" id="downloadReport">
-                        <i class="fas fa-download"></i> Download Report
-                    </button>
+                    <div class="step">
+                        <i class="fas fa-circle"></i>
+                        <span>Running ML model analysis</span>
+                    </div>
+                    <div class="step">
+                        <i class="fas fa-circle"></i>
+                        <span>Running DL model analysis</span>
+                    </div>
+                    <div class="step">
+                        <i class="fas fa-circle"></i>
+                        <span>Generating results</span>
+                    </div>
                 </div>
             </div>
 

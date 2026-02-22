@@ -8,10 +8,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mobile Navigation Toggle
     const navToggle = document.querySelector('.nav-toggle');
     const navMenu = document.querySelector('.nav-menu');
+    const navbar = document.querySelector('.navbar');
     
-    if (navToggle) {
-        navToggle.addEventListener('click', function() {
+    if (navToggle && navMenu) {
+        // Toggle menu on button click
+        navToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
             navMenu.classList.toggle('active');
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!navbar.contains(e.target)) {
+                navMenu.classList.remove('active');
+            }
+        });
+        
+        // Close menu when clicking a menu item
+        navMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function() {
+                navMenu.classList.remove('active');
+            });
         });
     }
     
@@ -119,3 +136,52 @@ function updateToggleButton(isDark) {
         }
     }
 }
+
+const track = document.getElementById("sliderTrack");
+const pauseBtn = document.getElementById("pauseBtn");
+
+let position = 0;
+const totalCards = track.children.length;
+
+/* ✅ Get actual card width + gap */
+function getCardWidth() {
+    const card = document.querySelector(".template-card");
+    const cardStyle = window.getComputedStyle(card);
+    const trackStyle = window.getComputedStyle(track);
+
+    const gap = parseInt(trackStyle.gap) || 0;
+    return card.offsetWidth + gap;
+}
+
+/* ✅ Move slider */
+function moveSlide(direction) {
+    const cardWidth = getCardWidth();
+
+    position += direction;
+
+    /* ⭐ Prevent half visible cards */
+    const wrapperWidth = document.querySelector(".slider-wrapper").offsetWidth;
+    const visibleCards = Math.floor(wrapperWidth / cardWidth);
+
+    if (position < 0) position = totalCards - visibleCards;
+    if (position > totalCards - visibleCards) position = 0;
+
+    track.style.transform = `translateX(-${position * cardWidth}px)`;
+}
+
+/* ✅ Auto sliding */
+let autoSlide = setInterval(() => moveSlide(1), 2500);
+let isPaused = false;
+
+/* ✅ Pause / Play */
+function toggleAuto() {
+    if (isPaused) {
+        autoSlide = setInterval(() => moveSlide(1), 2500);
+        pauseBtn.innerHTML = "⏸";
+    } else {
+        clearInterval(autoSlide);
+        pauseBtn.innerHTML = "▶";
+    }
+    isPaused = !isPaused;
+}
+
