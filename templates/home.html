@@ -18,23 +18,26 @@
                     <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-lg">
                         <i class="fas fa-upload"></i> Start Detection
                     </a>
-                    <a href="{{ url_for('history_page') }}" class="btn btn-secondary btn-lg">
-                        <i class="fas fa-info-circle"></i> Learn More
+                    <a href="#features" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-info-circle"></i> View Features
                     </a>
                 </div>
-                <div class="hero-stats">
-                    <div class="stat">
-                        <div class="stat-number">95%+</div>
-                        <div class="stat-label">Accuracy</div>
+
+                <div class="mini-wave">
+                    
+
+
+                    <div class="mini-bars">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
                     </div>
-                    <div class="stat">
-                        <div class="stat-number">2</div>
-                        <div class="stat-label">AI Models</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number">&lt;5s</div>
-                        <div class="stat-label">Detection Time</div>
-                    </div>
+
+                    <p class="typing tagline">
+                        <span class="typing-text">Protecting trust in digital voice</span>
+
                 </div>
             </div>
             <div class="hero-visual">
@@ -131,42 +134,130 @@
                     </div>
                 </div>
             </div>
+
             <div class="info-visual">
-                <div class="comparison-box">
-                    <div class="comparison-item real">
-                        <i class="fas fa-check-circle"></i>
-                        <h4>Real Audio</h4>
-                        <div class="audio-bars">
-                            <span></span><span></span><span></span><span></span>
-                        </div>
-                        <p>Natural voice patterns</p>
-                    </div>
-                    <div class="comparison-divider">
-                        <i class="fas fa-arrows-alt-h"></i>
-                    </div>
-                    <div class="comparison-item fake">
-                        <i class="fas fa-times-circle"></i>
-                        <h4>Fake Audio</h4>
-                        <div class="audio-bars">
-                            <span></span><span></span><span></span><span></span>
-                        </div>
-                        <p>Synthetic artifacts</p>
-                    </div>
+                <div class="comparison-image-box">
+                    <img src="{{ url_for('static', filename='images/img7.png') }}" 
+                        alt="Real vs Fake Audio Comparison" 
+                        class="comparison-img">
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="cta-section">
+
+<section class="template-section">
+    <h2 class="template-heading">Explore Templates</h2>
+
+    
+
+        <div class="slider-wrapper">
+            <div class="slider-track" id="sliderTrack">
+
+                <img src="{{url_for('static',filename='images/img1.jpg')}}" class="template-card">
+                <img src="{{url_for('static',filename='images/img2.jpg')}}" class="template-card">
+                <img src="{{url_for('static',filename='images/img3.jpg')}}" class="template-card">
+                <img src="{{url_for('static',filename='images/img4.png')}}" class="template-card">
+                <img src="{{url_for('static',filename='images/img5.png')}}" class="template-card">
+                <img src="{{url_for('static',filename='images/img6.png')}}" class="template-card">
+            </div>
+        </div>
+
+
+        <div class="slider-controls">
+
+            <button class="control-btn" onclick="moveSlide(-1)">❮</button>
+            
+
+            <button class="control-btn" id="pauseBtn" onclick="toggleAuto()">⏸</button>
+            <button class="control-btn" onclick="moveSlide(-1)">❯</button>
+
+        </div>
+
+
+</section>
+
+<section id="features" class="features-showcase">
     <div class="container">
-        <div class="cta-content">
-            <h2>Ready to Verify Your Audio?</h2>
-            <p>Upload your audio file and get instant deepfake detection results</p>
-            <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-lg">
-                <i class="fas fa-upload"></i> Start Now
-            </a>
+        <div class="section-header">
+            <h2>Authenti<span class="gradient-text">Vox</span> Features</h2>
+            <p>Advanced AI technology to identify deepfake audio with precision.</p>
+        </div>
+
+        <div class="features-card-grid">
+            <div class="showcase-card">
+                <div class="showcase-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3>Machine Learning</h3>
+                <p>Random Forest classifier analyzes MFCC , spectral , and temporal features extracted from audio signals.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i>13 MFCC Coefficients</li>
+                    <li><i class="fas fa-check"></i>Spectral Analysis</li>
+                    <li><i class="fas fa-check"></i>Temporal Features</li>
+                </ul>
+            </div>
+            <div class="showcase-card">
+                <div class="showcase-icon">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <h3>Deep Learning</h3>
+                <p>Convolutional Neural Network processes mel spectrogram to detect subtel patterns in voice synthesis.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i>CNN Architecture</li>
+                    <li><i class="fas fa-check"></i>Mel Spectrogram Analysis</li>
+                    <li><i class="fas fa-check"></i>Pattern Recogniton</li>
+                </ul>
+            </div>
+             <div class="showcase-card">
+                <div class="showcase-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <h3>Hybrid Fusion</h3>
+                <p>Intelligent combination of both models using weighted averaging for enhanced accuracy and reliability.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i>Ensemble method</li>
+                    <li><i class="fas fa-check"></i>Real-time Detection</li>
+                    <li><i class="fas fa-check"></i>Enhanced accuracy</li>
+                </ul>
+            </div>
+            <div class="showcase-card">
+                <div class="showcase-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Detailed Analysis</h3>
+                <p>Comprehensive report with confidence score , spectrograms and detection indicators.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i>Confidence Score</li>
+                    <li><i class="fas fa-check"></i>Visual Spectrogram</li>
+                    <li><i class="fas fa-check"></i>Detailed Reports</li>
+                </ul>
+            </div>
+            <div class="showcase-card">
+                <div class="showcase-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3>Fast Processing</h3>
+                <p>Fast Analysis under 5 seconds with optimized algorithm and efficient processing.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i>Fast Processing</li>
+                    <li><i class="fas fa-check"></i>Under 5 seconds</li>
+                    <li><i class="fas fa-check"></i>Batch Processing</li>
+                </ul>
+            </div>
+            <div class="showcase-card">
+                <div class="showcase-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Privacy Focused</h3>
+                <p>Audio files are securely processed and never be leaked openly.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i>Secure Proecessing</li>
+                    <li><i class="fas fa-check"></i>Safe Analysis</li>
+                    <li><i class="fas fa-check"></i>No data breach</li>
+                </ul>
+            </div>
         </div>
     </div>
 </section>
