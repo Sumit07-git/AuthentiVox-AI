@@ -1670,6 +1670,7 @@ section {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin-top: 32px;
 }
 
 .technical-grid {
@@ -1692,6 +1693,7 @@ section {
 
 .technical-card.full-width {
     grid-column: 1 / -1;
+     margin-top: 16px;
 }
 
 .technical-card h3 {
