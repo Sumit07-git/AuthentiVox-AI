@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AuthentiVox{% endblock %}</title>
     
-    <!-- Google Fonts -->
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome -->
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Custom CSS -->
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Audio Wave Background Animation -->
+    
     <div class="audio-wave-bg">
         <div class="wave-bar"></div>
         <div class="wave-bar"></div>
@@ -42,7 +42,7 @@
         <div class="wave-bar"></div>
     </div>
 
-    <!-- Navigation -->
+    
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">
@@ -66,12 +66,12 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
+    
     <main class="main-content">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
+    
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -102,7 +102,7 @@
         </div>
     </footer>
 
-    <!-- Scripts -->
+    
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>

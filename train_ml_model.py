@@ -16,7 +16,7 @@ from utils.feature_extractor import AudioFeatureExtractor
 
 
 class MLModelTrainer:
-    """Train and evaluate Random Forest classifier"""
+    
     
     def __init__(self):
         self.feature_extractor = AudioFeatureExtractor(sr=22050, n_mfcc=13)
@@ -43,18 +43,18 @@ class MLModelTrainer:
         fake_files = [os.path.join(fake_audio_dir, f) for f in os.listdir(fake_audio_dir) 
                       if f.endswith(('.wav', '.mp3', '.flac'))]
         
-        # Create labels
+        
         real_labels = [1] * len(real_files)
         fake_labels = [0] * len(fake_files)
         
-        # Combine
+        
         all_files = real_files + fake_files
         all_labels = real_labels + fake_labels
         
         print(f"Total files: {len(all_files)} (Real: {len(real_files)}, Fake: {len(fake_files)})")
         print("Extracting features...")
         
-        # Extract features
+        
         X, y = self.feature_extractor.extract_batch_features(all_files, all_labels)
         
         print(f"Feature shape: {X.shape}")
@@ -75,12 +75,12 @@ class MLModelTrainer:
         Returns:
             metrics: Dictionary of evaluation metrics
         """
-        # Split data
+        
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=test_size, random_state=42, stratify=y
         )
         
-        # Scale features
+        
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
         
@@ -113,7 +113,7 @@ class MLModelTrainer:
             )
             self.model.fit(X_train_scaled, y_train)
         
-        # Evaluate
+        
         y_pred = self.model.predict(X_test_scaled)
         accuracy = accuracy_score(y_test, y_pred)
         
@@ -175,32 +175,32 @@ class MLModelTrainer:
 
 
 def main():
-    """Main training function"""
+    
     print("="*50)
     print("MACHINE LEARNING MODEL TRAINING")
     print("="*50)
     
-    # Initialize trainer
+    
     trainer = MLModelTrainer()
     
-    # Set data directories
+    
     real_dir = 'data/train/real'
     fake_dir = 'data/train/fake'
     
-    # Check if directories exist
+    
     if not os.path.exists(real_dir) or not os.path.exists(fake_dir):
         print("\nERROR: Training data directories not found!")
         print(f"Please create and populate: {real_dir} and {fake_dir}")
         print("Add your real and fake audio samples (.wav or .mp3 files)")
         return
     
-    # Load and prepare data
+    
     X, y = trainer.load_data(real_dir, fake_dir)
     
-    # Train model
-    metrics = trainer.train(X, y, optimize=False)  # Set to True for hyperparameter tuning
     
-    # Save model
+    metrics = trainer.train(X, y, optimize=False)  
+    
+    
     trainer.save_model()
     
     print("\nTraining completed successfully!")

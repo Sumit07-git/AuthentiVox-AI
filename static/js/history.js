@@ -1,8 +1,6 @@
-// History Page JavaScript - DeepGuard AI
-// Manage analysis history and reports
 
 document.addEventListener('DOMContentLoaded', function() {
-    // DOM Elements
+    
     const historyContainer = document.getElementById('historyContainer');
     const historyList = document.getElementById('historyList');
     const emptyState = document.getElementById('emptyState');
@@ -15,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextPageBtn = document.getElementById('nextPage');
     const pageInfo = document.getElementById('pageInfo');
     
-    // Modal elements
+    
     const reportModal = document.getElementById('reportModal');
     const modalOverlay = document.getElementById('modalOverlay');
     const modalClose = document.getElementById('modalClose');
@@ -28,10 +26,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentHistory = [];
     let selectedReport = null;
     
-    // Load and display history on page load
+    
     loadHistory();
     
-    // Event listeners
+    
     filterResult.addEventListener('change', loadHistory);
     sortBy.addEventListener('change', loadHistory);
     clearHistoryBtn.addEventListener('click', clearAllHistory);
@@ -39,19 +37,19 @@ document.addEventListener('DOMContentLoaded', function() {
     prevPageBtn.addEventListener('click', () => changePage(-1));
     nextPageBtn.addEventListener('click', () => changePage(1));
     
-    // Modal close handlers
+    
     modalClose.addEventListener('click', closeModal);
     modalCloseBtn.addEventListener('click', closeModal);
     modalOverlay.addEventListener('click', closeModal);
     downloadThisReport.addEventListener('click', downloadCurrentReport);
     
-    // Load history from localStorage
+    
     function loadHistory() {
         try {
-            // Get history from localStorage
+            
             let history = JSON.parse(localStorage.getItem('analysisHistory') || '[]');
             
-            // Apply filter
+            
             const filter = filterResult.value;
             if (filter === 'real') {
                 history = history.filter(item => !item.is_fake);
@@ -59,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 history = history.filter(item => item.is_fake);
             }
             
-            // Apply sort
+            
             const sort = sortBy.value;
             history.sort((a, b) => {
                 switch(sort) {
@@ -86,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Display history items
+    
     function displayHistory() {
         if (currentHistory.length === 0) {
             showEmptyState();
@@ -95,26 +93,26 @@ document.addEventListener('DOMContentLoaded', function() {
         
         hideEmptyState();
         
-        // Calculate pagination
+        
         const totalPages = Math.ceil(currentHistory.length / itemsPerPage);
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         const pageItems = currentHistory.slice(startIndex, endIndex);
         
-        // Clear list
+        
         historyList.innerHTML = '';
         
-        // Add items
+        
         pageItems.forEach(item => {
             const historyItem = createHistoryItem(item);
             historyList.appendChild(historyItem);
         });
         
-        // Update pagination
+        
         updatePagination(totalPages);
     }
     
-    // Create history item HTML
+    
     function createHistoryItem(item) {
         const div = document.createElement('div');
         div.className = 'history-item';
@@ -154,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        // Add event listeners
+        
         div.querySelector('.view-report').addEventListener('click', () => viewReport(item));
         div.querySelector('.download-report').addEventListener('click', () => downloadReport(item));
         div.querySelector('.delete-report').addEventListener('click', () => deleteReport(item.id));
@@ -162,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return div;
     }
     
-    // View report in modal
+    
     function viewReport(item) {
         selectedReport = item;
         
@@ -211,13 +209,13 @@ document.addEventListener('DOMContentLoaded', function() {
         reportModal.style.display = 'block';
     }
     
-    // Close modal
+    
     function closeModal() {
         reportModal.style.display = 'none';
         selectedReport = null;
     }
     
-    // Download individual report
+    
     function downloadReport(item) {
         const resultText = item.is_fake ? 'FAKE' : 'REAL';
         const date = new Date(item.timestamp);
@@ -265,14 +263,14 @@ Report ID: ${item.id}
         URL.revokeObjectURL(url);
     }
     
-    // Download current report from modal
+    
     function downloadCurrentReport() {
         if (selectedReport) {
             downloadReport(selectedReport);
         }
     }
     
-    // Download all reports
+    
     function downloadAllReports() {
         if (currentHistory.length === 0) {
             alert('No reports to download');
@@ -308,7 +306,7 @@ Report ID: ${item.id}
         URL.revokeObjectURL(url);
     }
     
-    // Delete report
+    
     function deleteReport(id) {
         if (!confirm('Are you sure you want to delete this report?')) {
             return;
@@ -324,7 +322,7 @@ Report ID: ${item.id}
         }
     }
     
-    // Clear all history
+    
     function clearAllHistory() {
         if (!confirm('Are you sure you want to delete ALL history? This cannot be undone.')) {
             return;
@@ -334,7 +332,7 @@ Report ID: ${item.id}
         loadHistory();
     }
     
-    // Pagination
+    
     function updatePagination(totalPages) {
         if (totalPages <= 1) {
             pagination.style.display = 'none';
@@ -353,7 +351,7 @@ Report ID: ${item.id}
         displayHistory();
     }
     
-    // Show/hide empty state
+    
     function showEmptyState() {
         emptyState.style.display = 'block';
         historyList.innerHTML = '';
@@ -364,7 +362,7 @@ Report ID: ${item.id}
         emptyState.style.display = 'none';
     }
     
-    // Format file size
+    
     function formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
