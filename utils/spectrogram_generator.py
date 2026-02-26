@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 
 
 class SpectrogramGenerator:
-    """Generate mel spectrograms from audio files"""
+    
     
     def __init__(self, sr=22050, n_mels=128, n_fft=2048, hop_length=512):
         """
@@ -41,10 +41,10 @@ class SpectrogramGenerator:
             mel_spectrogram: 2D numpy array
         """
         try:
-            # Load audio
+            
             y, sr = librosa.load(audio_path, sr=self.sr, duration=duration)
             
-            # Generate mel spectrogram
+            
             mel_spec = librosa.feature.melspectrogram(
                 y=y, 
                 sr=sr,
@@ -53,7 +53,7 @@ class SpectrogramGenerator:
                 hop_length=self.hop_length
             )
             
-            # Convert to log scale (dB)
+            
             mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
             
             return mel_spec_db
@@ -72,7 +72,7 @@ class SpectrogramGenerator:
             with_axes: If True, include axes labels (default: False)
         """
         if with_axes:
-            # Original version with axes and labels
+            
             plt.figure(figsize=(10, 4))
             librosa.display.specshow(
                 mel_spec_db,
@@ -88,10 +88,10 @@ class SpectrogramGenerator:
             plt.savefig(save_path, dpi=100, bbox_inches='tight')
             plt.close()
         else:
-            # Clean version - no axes, no labels, just the spectrogram
+            
             fig, ax = plt.subplots(figsize=(12, 4))
             
-            # Display spectrogram
+            
             librosa.display.specshow(
                 mel_spec_db,
                 sr=self.sr,
@@ -100,17 +100,17 @@ class SpectrogramGenerator:
                 ax=ax
             )
             
-            # Remove all axes, labels, and whitespace
+            
             ax.axis('off')
             ax.set_frame_on(False)
             
-            # Remove margins and padding
+            
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
             plt.margins(0, 0)
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())
             
-            # Save with no padding
+            
             plt.savefig(save_path, 
                        dpi=100, 
                        bbox_inches='tight', 
@@ -129,19 +129,19 @@ class SpectrogramGenerator:
         Returns:
             processed_spec: Normalized and resized spectrogram
         """
-        # Resize to target shape
+        
         if mel_spec_db.shape[1] < target_shape[1]:
-            # Pad if too short
+            
             pad_width = target_shape[1] - mel_spec_db.shape[1]
             mel_spec_db = np.pad(mel_spec_db, ((0, 0), (0, pad_width)), mode='constant')
         else:
-            # Crop if too long
+            
             mel_spec_db = mel_spec_db[:, :target_shape[1]]
         
-        # Normalize to [0, 1]
+        
         mel_spec_normalized = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min())
         
-        # Add channel dimension for CNN
+        
         mel_spec_normalized = np.expand_dims(mel_spec_normalized, axis=-1)
         
         return mel_spec_normalized

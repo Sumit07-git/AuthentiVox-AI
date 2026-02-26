@@ -1,10 +1,6 @@
-/* ================================
-   DeepGuard AI - Modern SaaS Design
-   ================================ */
 
-/* CSS Variables */
 :root {
-    /* Colors */
+    
     --primary-color: #6366f1;
     --primary-dark: #4f46e5;
     --primary-light: #818cf8;
@@ -14,7 +10,7 @@
     --warning-color: #f59e0b;
     --info-color: #3b82f6;
     
-    /* Neutral Colors - Light Mode */
+    
     --gray-50: #f9fafb;
     --gray-100: #f3f4f6;
     --gray-200: #e5e7eb;
@@ -26,44 +22,44 @@
     --gray-800: #1f2937;
     --gray-900: #111827;
     
-    /* Background */
+    
     --bg-primary: #ffffff;
     --bg-secondary: #f9fafb;
     --bg-dark: #111827;
     
-    /* Text */
+    
     --text-primary: #111827;
     --text-secondary: #6b7280;
     --text-light: #9ca3af;
     
-    /* Spacing */
+    
     --spacing-xs: 0.5rem;
     --spacing-sm: 1rem;
     --spacing-md: 1.5rem;
     --spacing-lg: 2rem;
     --spacing-xl: 3rem;
     
-    /* Border Radius */
+    
     --radius-sm: 0.375rem;
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
     --radius-xl: 1rem;
     
-    /* Shadows */
+    
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     
-    /* Transitions */
+    
     --transition-fast: 150ms ease;
     --transition-normal: 300ms ease;
     --transition-slow: 500ms ease;
 }
 
-/* Dark Mode Variables */
+
 [data-theme="dark"] {
-    /* Neutral Colors - Dark Mode */
+    
     --gray-50: #1f2937;
     --gray-100: #374151;
     --gray-200: #4b5563;
@@ -75,24 +71,24 @@
     --gray-800: #f9fafb;
     --gray-900: #ffffff;
     
-    /* Background - Dark Mode */
+    
     --bg-primary: #111827;
     --bg-secondary: #1f2937;
     --bg-dark: #000000;
     
-    /* Text - Dark Mode */
+    
     --text-primary: #f9fafb;
     --text-secondary: #d1d5db;
     --text-light: #9ca3af;
     
-    /* Shadows - Dark Mode (more subtle) */
+    
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
 }
 
-/* Dark Mode Toggle Button */
+
 .dark-mode-toggle {
     background: none;
     border: none;
@@ -120,7 +116,7 @@
     transform: rotate(360deg);
 }
 
-/* Reset & Base Styles */
+
 * {
     margin: 0;
     padding: 0;
@@ -139,12 +135,12 @@ body {
     overflow-x: hidden;
     transition: background-color 0.3s ease, color 0.3s ease;
     
-    /* Dark Neural Network Background */
+    
     background: #0a0e27;
     position: relative;
 }
 
-/* Neural Network Pattern Background */
+
 body::before {
     content: '';
     position: fixed;
@@ -160,7 +156,7 @@ body::before {
     z-index: 0;
 }
 
-/* Animated Neural Network Dots */
+
 body::after {
     content: '';
     position: fixed;
@@ -190,7 +186,7 @@ body::after {
     }
 }
 
-/* Audio Waveform Animation Layer */
+
 .audio-wave-bg {
     position: fixed;
     bottom: 0;
@@ -251,7 +247,7 @@ body::after {
     }
 }
 
-/* Ensure content is above background layers */
+
 .navbar,
 .main-content,
 .footer {
@@ -259,7 +255,7 @@ body::after {
     z-index: 1;
 }
 
-/* Dark Mode Neural Network */
+
 [data-theme="dark"] body {
     background: #050814;
 }
@@ -278,7 +274,7 @@ body::after {
     );
 }
 
-/* Typography */
+
 h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     line-height: 1.2;
@@ -307,14 +303,14 @@ a:hover {
     color: var(--primary-dark);
 }
 
-/* Container */
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 var(--spacing-md);
 }
 
-/* Navigation */
+
 .navbar {
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(10px);
@@ -382,20 +378,20 @@ a:hover {
     color: var(--text-primary);
 }
 
-/* Main Content */
+
 .main-content {
     min-height: calc(100vh - 80px);
     position: relative;
     z-index: 1;
 }
 
-/* Ensure all main sections are visible above background */
+
 section {
     position: relative;
     z-index: 1;
 }
 
-/* Buttons */
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -445,7 +441,7 @@ section {
     color: white;
 }
 
-/* Hero Section */
+
 .hero {
     background: linear-gradient(135deg, #2b2f77, #4c51bf 100%);
     color: white;
@@ -526,7 +522,7 @@ section {
     opacity: 0.8;
 }
 
-/* Visual Card */
+
 .visual-card {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -583,7 +579,7 @@ section {
     100% { left: 100%; }
 }
 
-/* Features Section */
+
 .features {
     padding: 4rem 0;
     background: transparent;
@@ -638,7 +634,7 @@ section {
     color: rgba(255, 255, 255, 0.9);
 }
 
-/* Dark Mode Features */
+
 [data-theme="dark"] .feature-card {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.1);
@@ -688,7 +684,7 @@ section {
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Deepfake Info Section */
+
 .deepfake-info {
     padding: 4rem 0;
     background: transparent;
@@ -741,7 +737,7 @@ section {
     justify-content: space-around;
 }
 
-/* Dark mode for comparison box */
+
 [data-theme="dark"] .comparison-box {
     background: var(--bg-primary);
     border: 1px solid var(--gray-700);
@@ -784,7 +780,7 @@ section {
     font-size: 1.5rem;
 }
 
-/* Upload Section */
+
 .upload-section {
     padding: 3rem 0;
     min-height: calc(100vh - 80px);
@@ -822,7 +818,7 @@ section {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-/* Dark mode for upload area */
+
 [data-theme="dark"] .upload-area {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.2);
@@ -871,7 +867,7 @@ section {
     font-size: 0.875rem;
 }
 
-/* File Info */
+
 .file-info {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -882,7 +878,7 @@ section {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Dark mode for file info */
+
 [data-theme="dark"] .file-info {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -955,7 +951,7 @@ section {
     width: 100%;
 }
 
-/* Loading State */
+
 .loading-state {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -967,7 +963,7 @@ section {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Dark mode for loading state */
+
 [data-theme="dark"] .loading-state {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1045,7 +1041,7 @@ section {
     color: var(--success-color);
 }
 
-/* Error Message */
+
 .error-message {
     background: #fee2e2;
     color: #991b1b;
@@ -1061,7 +1057,7 @@ section {
    NEW PROFESSIONAL RESULTS PAGE
    ======================================== */
 
-/* Results Hero Section */
+
 .results-hero {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -1126,7 +1122,7 @@ section {
     background: linear-gradient(135deg, #059669 0%, #10b981 100%);
 }
 
-/* Red for fake audio */
+
 .results-hero.fake {
     background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
 }
@@ -1144,7 +1140,7 @@ section {
     color: white;
 }
 
-/* Results Dashboard */
+
 .results-dashboard {
     padding: 3rem 0;
     position: relative;
@@ -1245,7 +1241,7 @@ section {
     text-overflow: ellipsis;
 }
 
-/* Confidence Section */
+
 .confidence-section {
     margin-bottom: 3rem;
 }
@@ -1372,7 +1368,7 @@ section {
     text-align: right;
 }
 
-/* Audio Analysis Section */
+
 .audio-analysis-section {
     padding: 3rem 0;
     position: relative;
@@ -1480,7 +1476,7 @@ section {
     color: var(--primary-color);
 }
 
-/* Detection Indicators */
+
 .indicator-list {
     display: flex;
     flex-direction: column;
@@ -1557,7 +1553,7 @@ section {
     color: white;
 }
 
-/* Spectrogram Full Section */
+
 .spectrogram-full-section {
     padding: 3rem 0;
     position: relative;
@@ -1656,7 +1652,7 @@ section {
     font-size: 0.875rem;
 }
 
-/* Technical Section */
+
 .technical-section {
     padding: 3rem 0;
     position: relative;
@@ -1704,7 +1700,7 @@ section {
     gap: 0.5rem;
 }
 
-/* Model Comparison */
+
 .model-comparison {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -1790,7 +1786,7 @@ section {
     font-weight: 700;
 }
 
-/* Features List */
+
 .features-list {
     display: flex;
     flex-direction: column;
@@ -1830,7 +1826,7 @@ section {
     font-size: 0.875rem;
 }
 
-/* Timeline */
+
 .timeline {
     display: flex;
     justify-content: space-between;
@@ -1903,7 +1899,7 @@ section {
     font-weight: 600;
 }
 
-/* Actions Section */
+
 .actions-section {
     padding: 3rem 0 4rem;
     position: relative;
@@ -1968,7 +1964,7 @@ section {
     font-size: 2rem;
 }
 
-/* Footer */
+
 .footer {
     background: rgba(17, 24, 39, 0.9);
     backdrop-filter: blur(10px);
@@ -2025,7 +2021,7 @@ section {
     color: var(--gray-400);
 }
 
-/* Responsive Design */
+
 @media (max-width: 968px) {
     .results-stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -2251,7 +2247,7 @@ section {
     color: white;
 }
 
-/* History Container */
+
 .history-container {
     max-width: 1000px;
     margin: 0 auto;
@@ -2263,7 +2259,7 @@ section {
     gap: 1rem;
 }
 
-/* Empty State */
+
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
@@ -2294,7 +2290,7 @@ section {
     margin-bottom: 1.5rem;
 }
 
-/* History Item */
+
 .history-item {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -2448,7 +2444,7 @@ section {
     color: white;
 }
 
-/* Modal */
+
 .modal {
     position: fixed;
     top: 0;
@@ -2540,7 +2536,7 @@ section {
     border-color: var(--gray-700);
 }
 
-/* Report Detail */
+
 .report-detail {
     display: flex;
     flex-direction: column;
@@ -2611,7 +2607,7 @@ section {
     color: var(--danger-color);
 }
 
-/* Pagination */
+
 .pagination {
     display: flex;
     justify-content: center;
@@ -2625,7 +2621,7 @@ section {
     font-size: 0.875rem;
 }
 
-/* Template Section */
+
 .template-section {
     padding: 60px 20px;
     text-align: center;
@@ -2717,7 +2713,7 @@ section {
     border-color: rgba(139, 92, 246, 0.8);
 }
 
-/* Responsive - History */
+
 @media (max-width: 768px) {
     .history-controls {
         flex-direction: column;
@@ -2775,7 +2771,7 @@ section {
     margin-top:15px;
 }
 
-/* Bars */
+
 .mini-bars{
     display:flex;
     gap:4px;
@@ -2800,7 +2796,7 @@ section {
     50%{height:18px;opacity:1;}
 }
 
-/* Text */
+
 .mini-tagline{
     color:white;
     font-size:14px;
@@ -2812,7 +2808,7 @@ section {
     margin:0;
 }
 
-/* Typing text */
+
 .typing-text{
     color:white;
     font-size:30px;
@@ -2832,13 +2828,13 @@ section {
         blink .8s infinite;
 }
 
-/* Typing effect */
+
 @keyframes typing{
     from{width:0}
-    to{width:26ch;} /* adjust if text changes */
+    to{width:26ch;} 
 }
 
-/* Cursor blink */
+
 @keyframes blink{
     50%{border-color:transparent}
 }
@@ -2869,7 +2865,7 @@ section {
     margin: 0 auto;
 }
 
-/* Feature Cards Grid */
+
 .features-card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -2877,7 +2873,7 @@ section {
     margin-bottom: 4rem;
 }
 
-/* Individual Feature Card */
+
 .showcase-card {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -2894,7 +2890,7 @@ section {
     border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Feature Icon */
+
 .showcase-icon {
     width: 5rem;
     height: 5rem;
@@ -2911,7 +2907,7 @@ section {
 
 
 
-/* Feature Title */
+
 .showcase-card h3 {
     color: white;
     font-size: 1.5rem;
@@ -2919,7 +2915,7 @@ section {
     font-weight: 700;
 }
 
-/* Feature Description */
+
 .showcase-card p {
     color: rgba(255, 255, 255, 0.85);
     font-size: 1rem;
@@ -2927,7 +2923,7 @@ section {
     margin-bottom: 1.5rem;
 }
 
-/* Feature List */
+
 .feature-list {
     list-style: none;
     padding: 0;
@@ -2952,7 +2948,7 @@ section {
 }
 
 
-/* Responsive Design */
+
 @media (max-width: 768px) {
     .features-showcase {
         padding: 3rem 0;

@@ -10,7 +10,7 @@ warnings.filterwarnings('ignore')
 
 
 class AudioFeatureExtractor:
-    """Extract comprehensive audio features for ML model"""
+    
     
     def __init__(self, sr=22050, n_mfcc=13):
         """
@@ -34,29 +34,29 @@ class AudioFeatureExtractor:
             feature_vector: 1D numpy array of features
         """
         try:
-            # Load audio file
+            
             y, sr = librosa.load(audio_path, sr=self.sr, duration=30)
             
-            # Extract MFCC features
+            
             mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=self.n_mfcc)
             mfcc_mean = np.mean(mfcc, axis=1)
             mfcc_std = np.std(mfcc, axis=1)
             
-            # Extract spectral features
+            
             spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr))
             spectral_rolloff = np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr))
             spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=y, sr=sr))
             
-            # Extract zero crossing rate
+            
             zcr = np.mean(librosa.feature.zero_crossing_rate(y))
             
-            # Extract chroma features
+            
             chroma = np.mean(librosa.feature.chroma_stft(y=y, sr=sr))
             
-            # Extract temporal features
+            
             rms = np.mean(librosa.feature.rms(y=y))
             
-            # Combine all features
+            
             feature_vector = np.concatenate([
                 mfcc_mean,
                 mfcc_std,

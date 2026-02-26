@@ -1,30 +1,30 @@
-// Main JavaScript - DeepGuard AI
-// Handle navigation, dark mode, and global interactions
+
+
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Dark Mode Toggle
+    
     initDarkMode();
     
-    // Mobile Navigation Toggle
+    
     const navToggle = document.querySelector('.nav-toggle');
     const navMenu = document.querySelector('.nav-menu');
     const navbar = document.querySelector('.navbar');
     
     if (navToggle && navMenu) {
-        // Toggle menu on button click
+        
         navToggle.addEventListener('click', function(e) {
             e.stopPropagation();
             navMenu.classList.toggle('active');
         });
         
-        // Close menu when clicking outside
+        
         document.addEventListener('click', function(e) {
             if (!navbar.contains(e.target)) {
                 navMenu.classList.remove('active');
             }
         });
         
-        // Close menu when clicking a menu item
+        
         navMenu.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', function() {
                 navMenu.classList.remove('active');
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Smooth scrolling for anchor links
+    
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             e.preventDefault();
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Add animation on scroll
+    
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -100px 0px'
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, observerOptions);
     
-    // Observe elements with fade-in class
+    
     document.querySelectorAll('.feature-card, .info-point').forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(20px)';
@@ -70,31 +70,31 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Dark Mode Functions
+
 function initDarkMode() {
-    // Check for saved theme preference or default to light mode
+    
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
     
-    // Create dark mode toggle button
+    
     createDarkModeToggle();
     
-    // Update toggle button state
+    
     updateToggleButton(savedTheme === 'dark');
 }
 
 function createDarkModeToggle() {
-    // Check if toggle already exists
+    
     if (document.getElementById('darkModeToggle')) return;
     
-    // Create toggle button
+    
     const toggleBtn = document.createElement('button');
     toggleBtn.id = 'darkModeToggle';
     toggleBtn.className = 'dark-mode-toggle';
     toggleBtn.setAttribute('aria-label', 'Toggle dark mode');
     toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
     
-    // Add to nav menu
+    
     const navMenu = document.querySelector('.nav-menu');
     if (navMenu) {
         const li = document.createElement('li');
@@ -102,7 +102,7 @@ function createDarkModeToggle() {
         navMenu.appendChild(li);
     }
     
-    // Add click handler
+    
     toggleBtn.addEventListener('click', function(e) {
         e.preventDefault();
         toggleDarkMode();
@@ -119,7 +119,7 @@ function toggleDarkMode() {
     
     updateToggleButton(newTheme === 'dark');
     
-    // Add transition animation
+    
     html.style.transition = 'background-color 0.3s ease, color 0.3s ease';
 }
 
@@ -143,7 +143,7 @@ const pauseBtn = document.getElementById("pauseBtn");
 let position = 0;
 const totalCards = track.children.length;
 
-/* ✅ Get actual card width + gap */
+
 function getCardWidth() {
     const card = document.querySelector(".template-card");
     const cardStyle = window.getComputedStyle(card);
@@ -153,13 +153,13 @@ function getCardWidth() {
     return card.offsetWidth + gap;
 }
 
-/* ✅ Move slider */
+
 function moveSlide(direction) {
     const cardWidth = getCardWidth();
 
     position += direction;
 
-    /* ⭐ Prevent half visible cards */
+    
     const wrapperWidth = document.querySelector(".slider-wrapper").offsetWidth;
     const visibleCards = Math.floor(wrapperWidth / cardWidth);
 
@@ -169,11 +169,11 @@ function moveSlide(direction) {
     track.style.transform = `translateX(-${position * cardWidth}px)`;
 }
 
-/* ✅ Auto sliding */
+
 let autoSlide = setInterval(() => moveSlide(1), 2500);
 let isPaused = false;
 
-/* ✅ Pause / Play */
+
 function toggleAuto() {
     if (isPaused) {
         autoSlide = setInterval(() => moveSlide(1), 2500);

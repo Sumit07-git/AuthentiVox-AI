@@ -13,7 +13,7 @@ from utils.spectrogram_generator import SpectrogramGenerator
 
 
 class HybridPredictor:
-    """Hybrid prediction system combining ML and DL models"""
+    
     
     def __init__(self, ml_model_path=None, dl_model_path=None, scaler_path=None):
         """
@@ -24,7 +24,7 @@ class HybridPredictor:
             dl_model_path: Path to DL model file
             scaler_path: Path to scaler file
         """
-        # Set default paths
+        
         if ml_model_path is None:
             ml_model_path = 'models/ml_model/rf_classifier.pkl'
         if dl_model_path is None:
@@ -32,11 +32,11 @@ class HybridPredictor:
         if scaler_path is None:
             scaler_path = 'models/ml_model/scaler.pkl'
         
-        # Initialize utilities
+        
         self.feature_extractor = AudioFeatureExtractor(sr=22050, n_mfcc=13)
         self.spec_generator = SpectrogramGenerator(sr=22050, n_mels=128)
         
-        # Load models
+        
         self.ml_model = None
         self.dl_model = None
         self.scaler = None
@@ -53,21 +53,21 @@ class HybridPredictor:
             scaler_path: Path to scaler
         """
         try:
-            # Load ML model
+            
             if os.path.exists(ml_model_path):
                 self.ml_model = joblib.load(ml_model_path)
                 print(f"✓ ML model loaded from {ml_model_path}")
             else:
                 print(f"⚠ Warning: ML model not found at {ml_model_path}")
             
-            # Load scaler
+            
             if os.path.exists(scaler_path):
                 self.scaler = joblib.load(scaler_path)
                 print(f"✓ Scaler loaded from {scaler_path}")
             else:
                 print(f"⚠ Warning: Scaler not found at {scaler_path}")
             
-            # Load DL model
+            
             if os.path.exists(dl_model_path):
                 self.dl_model = keras.models.load_model(dl_model_path)
                 print(f"✓ DL model loaded from {dl_model_path}")
@@ -92,17 +92,17 @@ class HybridPredictor:
             return None, None
         
         try:
-            # Extract features
+            
             features = self.feature_extractor.extract_features(audio_path)
             if features is None:
                 return None, None
             
-            # Scale and predict
+            
             features_scaled = self.scaler.transform(features.reshape(1, -1))
             prediction = self.ml_model.predict(features_scaled)[0]
             probabilities = self.ml_model.predict_proba(features_scaled)[0]
             
-            # Confidence is probability of predicted class
+            
             confidence = probabilities[1] if prediction == 1 else probabilities[0]
             
             return int(prediction), float(confidence)
@@ -126,20 +126,20 @@ class HybridPredictor:
             return None, None
         
         try:
-            # Generate spectrogram
+            
             mel_spec = self.spec_generator.generate_melspectrogram(audio_path)
             if mel_spec is None:
                 return None, None
             
-            # Prepare for CNN
+            
             spec_processed = self.spec_generator.prepare_for_cnn(mel_spec)
             spec_processed = np.expand_dims(spec_processed, axis=0)
             
-            # Predict
+            
             probability = self.dl_model.predict(spec_processed, verbose=0)[0][0]
             prediction = 1 if probability > 0.5 else 0
             
-            # Confidence is distance from decision boundary (0.5)
+            
             confidence = float(probability) if prediction == 1 else float(1 - probability)
             
             return int(prediction), confidence
@@ -161,7 +161,7 @@ class HybridPredictor:
         Returns:
             result: Dictionary containing predictions and confidences
         """
-        # Get predictions from both models
+        
         ml_pred, ml_conf = self.predict_ml(audio_path)
         dl_pred, dl_conf = self.predict_dl(audio_path)
         
@@ -175,7 +175,7 @@ class HybridPredictor:
             'method': method
         }
         
-        # If only one model available
+        
         if ml_pred is None and dl_pred is not None:
             result['hybrid_prediction'] = dl_pred
             result['hybrid_confidence'] = dl_conf
@@ -189,25 +189,25 @@ class HybridPredictor:
         elif ml_pred is None and dl_pred is None:
             return result
         
-        # Hybrid prediction methods
+        
         if method == 'weighted_average':
-            # Weighted average of confidences
-            # Convert predictions to probabilities (real class)
+            
+            
             ml_prob = ml_conf if ml_pred == 1 else (1 - ml_conf)
             dl_prob = dl_conf if dl_pred == 1 else (1 - dl_conf)
             
-            # Weighted combination
+            
             hybrid_prob = (ml_weight * ml_prob) + (dl_weight * dl_prob)
             result['hybrid_prediction'] = 1 if hybrid_prob > 0.5 else 0
             result['hybrid_confidence'] = hybrid_prob if result['hybrid_prediction'] == 1 else (1 - hybrid_prob)
             
         elif method == 'voting':
-            # Majority voting
+            
             if ml_pred == dl_pred:
                 result['hybrid_prediction'] = ml_pred
                 result['hybrid_confidence'] = (ml_conf + dl_conf) / 2
             else:
-                # Use higher confidence
+                
                 if ml_conf > dl_conf:
                     result['hybrid_prediction'] = ml_pred
                     result['hybrid_confidence'] = ml_conf
@@ -216,7 +216,7 @@ class HybridPredictor:
                     result['hybrid_confidence'] = dl_conf
         
         elif method == 'max_confidence':
-            # Choose prediction with higher confidence
+            
             if ml_conf > dl_conf:
                 result['hybrid_prediction'] = ml_pred
                 result['hybrid_confidence'] = ml_conf
@@ -262,14 +262,14 @@ class HybridPredictor:
 
 
 def test_predictor():
-    """Test function for hybrid predictor"""
+    
     print("="*50)
     print("TESTING HYBRID PREDICTOR")
     print("="*50)
     
     predictor = HybridPredictor()
     
-    # Test with a sample audio file
+    
     test_audio = 'data/test/sample.wav'
     
     if not os.path.exists(test_audio):
