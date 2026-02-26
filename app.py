@@ -60,7 +60,7 @@ def clear_upload_folder():
 @app.route('/')
 def index():
     """Home page"""
-    return render_template('home.html')
+    return render_template('index.html')
 
 
 @app.route('/upload')
@@ -235,7 +235,7 @@ def too_large(e):
 @app.errorhandler(404)
 def not_found(e):
     """Handle 404 errors"""
-    return render_template('home.html'), 404
+    return render_template('index.html'), 404
 
 
 @app.errorhandler(500)
