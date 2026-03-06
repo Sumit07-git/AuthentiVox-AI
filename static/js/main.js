@@ -137,12 +137,12 @@ function updateToggleButton(isDark) {
     }
 }
 
-// REPLACE THIS ENTIRE SECTION (from line ~140 to end)
+
 
 const track = document.getElementById("sliderTrack");
 const pauseBtn = document.getElementById("pauseBtn");
 
-// Add null checks to prevent errors
+
 if (track && pauseBtn && track.children && track.children.length > 0) {
     let position = 0;
     const totalCards = track.children.length;
@@ -186,6 +186,6 @@ if (track && pauseBtn && track.children && track.children.length > 0) {
         isPaused = !isPaused;
     }
     
-    // Make toggleAuto available globally if needed
+    
     window.toggleAuto = toggleAuto;
 }

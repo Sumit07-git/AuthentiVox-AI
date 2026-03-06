@@ -138,7 +138,7 @@ class MLModelTrainer:
         """Save trained model and scaler"""
         os.makedirs(model_dir, exist_ok=True)
         
-        # Save with the correct name that hybrid_predictor expects
+        
         model_path = os.path.join(model_dir, 'rf_classifier.pkl')
         scaler_path = os.path.join(model_dir, 'scaler.pkl')
         
