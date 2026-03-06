@@ -133,24 +133,72 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function analyzeAudio() {
         if (!selectedFile || isAnalyzing) return;
-        
+
         isAnalyzing = true;
         analysisStartTime = Date.now();
         fileInfo.style.display = 'none';
         loadingState.style.display = 'block';
         hideError();
         simulateProgress();
+
         const formData = new FormData();
         formData.append('audio_file', selectedFile);
-        
+
         try {
             const [response] = await Promise.all([
                 fetch('/api/upload', { method: 'POST', body: formData }),
                 new Promise(resolve => setTimeout(resolve, 2200))
             ]);
-            
-            const data = await response.json();
-            if (response.ok && data.success) {
+
+            // Check response status BEFORE parsing JSON
+            if (!response.ok) {
+                let errorMsg = 'Server error (' + response.status + ')';
+
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.error || errorMsg;
+                } catch (parseError) {
+                    // Response was not JSON (502 returns HTML or empty body)
+                    const text = await response.text().catch(() => '');
+                    console.error('Server returned ' + response.status + ':', text.substring(0, 200));
+
+                    // Provide helpful error messages per status code
+                    if (response.status === 502) {
+                        errorMsg = 'Server is temporarily unavailable. Please try again in a moment.';
+                    } else if (response.status === 413) {
+                        errorMsg = 'File is too large for the server to process.';
+                    } else if (response.status === 504) {
+                        errorMsg = 'Analysis timed out. Try a shorter audio file.';
+                    } else if (response.status === 500) {
+                        errorMsg = 'Internal server error. Please try again.';
+                    } else if (response.status === 503) {
+                        errorMsg = 'Service unavailable. The server may be starting up. Please wait and try again.';
+                    } else if (response.status === 408) {
+                        errorMsg = 'Request timed out. Please try again with a smaller file.';
+                    }
+                }
+
+                showError(errorMsg);
+                loadingState.style.display = 'none';
+                fileInfo.style.display = 'block';
+                isAnalyzing = false;
+                return;
+            }
+
+            // Safe JSON parsing even for 200 responses
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                console.error('Failed to parse server response:', parseError);
+                showError('Invalid response from server. Please try again.');
+                loadingState.style.display = 'none';
+                fileInfo.style.display = 'block';
+                isAnalyzing = false;
+                return;
+            }
+
+            if (data.success) {
                 displayResults(data);
             } else {
                 showError(data.error || 'An error occurred during analysis');
@@ -160,7 +208,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error:', error);
-            showError('Network error. Please try again.');
+
+            // Detect specific network errors
+            let errorMsg = 'Network error. Please check your connection and try again.';
+            if (error.name === 'AbortError') {
+                errorMsg = 'Request was cancelled. Please try again.';
+            } else if (error.message && error.message.includes('Failed to fetch')) {
+                errorMsg = 'Cannot reach the server. Please check if the server is running.';
+            }
+
+            showError(errorMsg);
             loadingState.style.display = 'none';
             fileInfo.style.display = 'block';
             isAnalyzing = false;
@@ -408,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const seconds = duration % 60;
                 const audioDuration = document.getElementById('audioDuration');
                 if (audioDuration) {
-                    audioDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    audioDuration.textContent = minutes + ':' + seconds.toString().padStart(2, '0');
                 }
             });
         }
@@ -515,40 +572,35 @@ document.addEventListener('DOMContentLoaded', function() {
     function downloadReport() {
         const predictionText = document.getElementById('predictionText');
         const confidenceText = document.getElementById('confidenceText');
-        const reportContent = `
-AUTHENTIVOX AUDIO ANALYSIS REPORT
-==================================
+        const reportContent = 
+'AUTHENTIVOX AUDIO ANALYSIS REPORT\n' +
+'==================================\n\n' +
+'File: ' + (selectedFile ? selectedFile.name : 'Unknown') + '\n' +
+'Date: ' + new Date().toLocaleString() + '\n\n' +
+'ANALYSIS RESULT\n' +
+'---------------\n' +
+'Prediction: ' + (predictionText ? predictionText.textContent : 'N/A') + '\n' +
+'Confidence: ' + (confidenceText ? confidenceText.textContent : 'N/A') + '\n\n' +
+'DETECTION METHOD\n' +
+'----------------\n' +
+'Hybrid AI System combining:\n' +
+'- Machine Learning (Random Forest)\n' +
+'- Deep Learning (CNN)\n' +
+'- Ensemble Fusion (Weighted Average)\n\n' +
+'FEATURES ANALYZED\n' +
+'-----------------\n' +
+'- MFCC Coefficients (13)\n' +
+'- Spectral Features\n' +
+'- Mel Spectrogram Patterns\n' +
+'- Temporal Characteristics\n\n' +
+'---\n' +
+'Report generated by AuthentiVox\n';
 
-File: ${selectedFile ? selectedFile.name : 'Unknown'}
-Date: ${new Date().toLocaleString()}
-
-ANALYSIS RESULT
----------------
-Prediction: ${predictionText ? predictionText.textContent : 'N/A'}
-Confidence: ${confidenceText ? confidenceText.textContent : 'N/A'}
-
-DETECTION METHOD
-----------------
-Hybrid AI System combining:
-- Machine Learning (Random Forest)
-- Deep Learning (CNN)
-- Ensemble Fusion (Weighted Average)
-
-FEATURES ANALYZED
------------------
-- MFCC Coefficients (13)
-- Spectral Features
-- Mel Spectrogram Patterns
-- Temporal Characteristics
-
----
-Report generated by AuthentiVox
-`;
         const blob = new Blob([reportContent], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `authentivox_report_${Date.now()}.txt`;
+        a.download = 'authentivox_report_' + Date.now() + '.txt';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -561,7 +613,7 @@ Report generated by AuthentiVox
         if (navigator.share) {
             navigator.share({
                 title: 'AuthentiVox Analysis Results',
-                text: `My audio was detected as ${predictionText ? predictionText.textContent : 'N/A'} with ${confidenceText ? confidenceText.textContent : 'N/A'} confidence by AuthentiVox AI.`
+                text: 'My audio was detected as ' + (predictionText ? predictionText.textContent : 'N/A') + ' with ' + (confidenceText ? confidenceText.textContent : 'N/A') + ' confidence by AuthentiVox AI.'
             }).catch(err => console.log('Share failed:', err));
         } else {
             alert('Sharing not supported on this browser');
@@ -584,4 +636,4 @@ Report generated by AuthentiVox
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     }
-}); 
+});
