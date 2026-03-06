@@ -46,24 +46,24 @@ class HybridPredictor:
     def load_models(self, ml_model_path, dl_model_path, scaler_path):
         """Load trained models with better error handling"""
         try:
-            # Load ML model
+            
             if os.path.exists(ml_model_path):
                 self.ml_model = joblib.load(ml_model_path)
                 print(f"✓ ML model loaded from {ml_model_path}")
             else:
                 print(f"⚠ Warning: ML model not found at {ml_model_path}")
             
-            # Load Scaler
+            
             if os.path.exists(scaler_path):
                 self.scaler = joblib.load(scaler_path)
                 print(f"✓ Scaler loaded from {scaler_path}")
             else:
                 print(f"⚠ Warning: Scaler not found at {scaler_path}")
             
-            # Load DL model - TRY BOTH FORMATS
+            
             dl_loaded = False
             
-            # Try .keras format first (newer)
+            
             keras_path = dl_model_path.replace('.h5', '.keras')
             if os.path.exists(keras_path):
                 try:
@@ -73,7 +73,7 @@ class HybridPredictor:
                 except Exception as e:
                     print(f"⚠ Failed to load .keras model: {str(e)}")
             
-            # Try .h5 format if .keras failed
+            
             if not dl_loaded and os.path.exists(dl_model_path):
                 try:
                     self.dl_model = keras.models.load_model(dl_model_path, compile=False)

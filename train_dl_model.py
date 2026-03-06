@@ -223,12 +223,12 @@ class CNNModelTrainer:
         """Save trained model in both formats"""
         os.makedirs(model_dir, exist_ok=True)
         
-        # Save in newer .keras format (recommended)
+        
         keras_path = os.path.join(model_dir, 'cnn_model.keras')
         self.model.save(keras_path)
         print(f"\n✓ Model saved to: {keras_path}")
         
-        # Also save in .h5 format for compatibility
+        
         h5_path = os.path.join(model_dir, 'cnn_model.h5')
         try:
             self.model.save(h5_path, save_format='h5')
