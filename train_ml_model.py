@@ -135,22 +135,19 @@ class MLModelTrainer:
         return metrics
     
     def save_model(self, model_dir='models/ml_model'):
-        """
-        Save trained model and scaler
-        
-        Args:
-            model_dir: Directory to save model
-        """
+        """Save trained model and scaler"""
         os.makedirs(model_dir, exist_ok=True)
         
+        # Save with the correct name that hybrid_predictor expects
         model_path = os.path.join(model_dir, 'rf_classifier.pkl')
         scaler_path = os.path.join(model_dir, 'scaler.pkl')
         
         joblib.dump(self.model, model_path)
         joblib.dump(self.scaler, scaler_path)
         
-        print(f"\nModel saved to: {model_path}")
-        print(f"Scaler saved to: {scaler_path}")
+        print(f"\n✓ Model saved to: {model_path}")
+        print(f"✓ Scaler saved to: {scaler_path}")
+    
     
     def predict(self, audio_path):
         """

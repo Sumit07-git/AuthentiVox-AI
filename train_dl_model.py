@@ -220,18 +220,21 @@ class CNNModelTrainer:
         return history, metrics
     
     def save_model(self, model_dir='models/dl_model'):
-        """
-        Save trained model
-        
-        Args:
-            model_dir: Directory to save model
-        """
+        """Save trained model in both formats"""
         os.makedirs(model_dir, exist_ok=True)
         
-        model_path = os.path.join(model_dir, 'cnn_model.keras')
-        self.model.save(model_path)
+        # Save in newer .keras format (recommended)
+        keras_path = os.path.join(model_dir, 'cnn_model.keras')
+        self.model.save(keras_path)
+        print(f"\n✓ Model saved to: {keras_path}")
         
-        print(f"\nModel saved to: {model_path}")
+        # Also save in .h5 format for compatibility
+        h5_path = os.path.join(model_dir, 'cnn_model.h5')
+        try:
+            self.model.save(h5_path, save_format='h5')
+            print(f"✓ Model also saved to: {h5_path}")
+        except Exception as e:
+            print(f"⚠ Could not save .h5 format: {str(e)}")
     
     def predict(self, audio_path):
         """

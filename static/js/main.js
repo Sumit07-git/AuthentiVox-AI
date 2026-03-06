@@ -137,51 +137,55 @@ function updateToggleButton(isDark) {
     }
 }
 
+// REPLACE THIS ENTIRE SECTION (from line ~140 to end)
+
 const track = document.getElementById("sliderTrack");
 const pauseBtn = document.getElementById("pauseBtn");
 
-let position = 0;
-const totalCards = track.children.length;
+// Add null checks to prevent errors
+if (track && pauseBtn && track.children && track.children.length > 0) {
+    let position = 0;
+    const totalCards = track.children.length;
 
-
-function getCardWidth() {
-    const card = document.querySelector(".template-card");
-    const cardStyle = window.getComputedStyle(card);
-    const trackStyle = window.getComputedStyle(track);
-
-    const gap = parseInt(trackStyle.gap) || 0;
-    return card.offsetWidth + gap;
-}
-
-
-function moveSlide(direction) {
-    const cardWidth = getCardWidth();
-
-    position += direction;
-
-    
-    const wrapperWidth = document.querySelector(".slider-wrapper").offsetWidth;
-    const visibleCards = Math.floor(wrapperWidth / cardWidth);
-
-    if (position < 0) position = totalCards - visibleCards;
-    if (position > totalCards - visibleCards) position = 0;
-
-    track.style.transform = `translateX(-${position * cardWidth}px)`;
-}
-
-
-let autoSlide = setInterval(() => moveSlide(1), 2500);
-let isPaused = false;
-
-
-function toggleAuto() {
-    if (isPaused) {
-        autoSlide = setInterval(() => moveSlide(1), 2500);
-        pauseBtn.innerHTML = "⏸";
-    } else {
-        clearInterval(autoSlide);
-        pauseBtn.innerHTML = "▶";
+    function getCardWidth() {
+        const card = document.querySelector(".template-card");
+        if (!card) return 0;
+        
+        const cardStyle = window.getComputedStyle(card);
+        const trackStyle = window.getComputedStyle(track);
+        const gap = parseInt(trackStyle.gap) || 0;
+        return card.offsetWidth + gap;
     }
-    isPaused = !isPaused;
-}
 
+    function moveSlide(direction) {
+        const cardWidth = getCardWidth();
+        if (cardWidth === 0) return;
+
+        position += direction;
+        
+        const wrapperWidth = document.querySelector(".slider-wrapper").offsetWidth;
+        const visibleCards = Math.floor(wrapperWidth / cardWidth);
+
+        if (position < 0) position = totalCards - visibleCards;
+        if (position > totalCards - visibleCards) position = 0;
+
+        track.style.transform = `translateX(-${position * cardWidth}px)`;
+    }
+
+    let autoSlide = setInterval(() => moveSlide(1), 2500);
+    let isPaused = false;
+
+    function toggleAuto() {
+        if (isPaused) {
+            autoSlide = setInterval(() => moveSlide(1), 2500);
+            pauseBtn.innerHTML = "⏸";
+        } else {
+            clearInterval(autoSlide);
+            pauseBtn.innerHTML = "▶";
+        }
+        isPaused = !isPaused;
+    }
+    
+    // Make toggleAuto available globally if needed
+    window.toggleAuto = toggleAuto;
+}
