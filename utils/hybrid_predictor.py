@@ -44,38 +44,53 @@ class HybridPredictor:
         self.load_models(ml_model_path, dl_model_path, scaler_path)
     
     def load_models(self, ml_model_path, dl_model_path, scaler_path):
-        """
-        Load trained models
-        
-        Args:
-            ml_model_path: Path to ML model
-            dl_model_path: Path to DL model
-            scaler_path: Path to scaler
-        """
+        """Load trained models with better error handling"""
         try:
-            
+            # Load ML model
             if os.path.exists(ml_model_path):
                 self.ml_model = joblib.load(ml_model_path)
                 print(f"✓ ML model loaded from {ml_model_path}")
             else:
                 print(f"⚠ Warning: ML model not found at {ml_model_path}")
             
-            
+            # Load Scaler
             if os.path.exists(scaler_path):
                 self.scaler = joblib.load(scaler_path)
                 print(f"✓ Scaler loaded from {scaler_path}")
             else:
                 print(f"⚠ Warning: Scaler not found at {scaler_path}")
             
+            # Load DL model - TRY BOTH FORMATS
+            dl_loaded = False
             
-            if os.path.exists(dl_model_path):
-                self.dl_model = keras.models.load_model(dl_model_path)
-                print(f"✓ DL model loaded from {dl_model_path}")
-            else:
-                print(f"⚠ Warning: DL model not found at {dl_model_path}")
+            # Try .keras format first (newer)
+            keras_path = dl_model_path.replace('.h5', '.keras')
+            if os.path.exists(keras_path):
+                try:
+                    self.dl_model = keras.models.load_model(keras_path, compile=False)
+                    print(f"✓ DL model loaded from {keras_path}")
+                    dl_loaded = True
+                except Exception as e:
+                    print(f"⚠ Failed to load .keras model: {str(e)}")
+            
+            # Try .h5 format if .keras failed
+            if not dl_loaded and os.path.exists(dl_model_path):
+                try:
+                    self.dl_model = keras.models.load_model(dl_model_path, compile=False)
+                    print(f"✓ DL model loaded from {dl_model_path}")
+                    dl_loaded = True
+                except Exception as e:
+                    print(f"⚠ Failed to load .h5 model: {str(e)}")
+            
+            if not dl_loaded:
+                print(f"⚠ Warning: DL model not found or failed to load")
+                print(f"   Tried: {keras_path} and {dl_model_path}")
+                print(f"   Will use ML-only prediction")
                 
         except Exception as e:
             print(f"Error loading models: {str(e)}")
+            import traceback
+            traceback.print_exc()
     
     def predict_ml(self, audio_path):
         """
