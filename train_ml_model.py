@@ -48,18 +48,18 @@ class MLModelTrainer:
         if len(fake_files) == 0:
             raise ValueError(f"No audio files found in {fake_audio_dir}")
         
-        # Create labels
+        
         real_labels = [1] * len(real_files)
         fake_labels = [0] * len(fake_files)
         
-        # Combine
+        
         all_files = real_files + fake_files
         all_labels = real_labels + fake_labels
         
         print(f"Total files: {len(all_files)} (Real: {len(real_files)}, Fake: {len(fake_files)})")
         print("Extracting features...")
         
-        # Extract features
+        
         X, y = self.feature_extractor.extract_batch_features(all_files, all_labels)
         
         if len(X) == 0:
@@ -67,7 +67,7 @@ class MLModelTrainer:
         
         print(f"Feature shape: {X.shape}")
         print(f"Labels shape: {y.shape}")
-        print(f"Sample feature values: {X[0][:5]}")  # Show first 5 values
+        print(f"Sample feature values: {X[0][:5]}")  
         
         return X, y
     
@@ -85,7 +85,7 @@ class MLModelTrainer:
             metrics: Dictionary of evaluation metrics
         """
         
-        # Split data
+        
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=test_size, random_state=42, stratify=y
         )
@@ -93,7 +93,7 @@ class MLModelTrainer:
         print(f"\nTraining samples: {len(X_train)}")
         print(f"Test samples: {len(X_test)}")
         
-        # Scale features
+        
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
         
@@ -126,7 +126,7 @@ class MLModelTrainer:
             )
             self.model.fit(X_train_scaled, y_train)
         
-        # Evaluate
+        
         y_pred = self.model.predict(X_test_scaled)
         y_pred_proba = self.model.predict_proba(X_test_scaled)
         accuracy = accuracy_score(y_test, y_pred)
@@ -162,21 +162,21 @@ class MLModelTrainer:
         if self.scaler is None:
             raise ValueError("❌ Scaler is None - cannot save! Train the model first.")
         
-        # Save model
+        
         model_path = os.path.join(model_dir, 'rf_classifier.pkl')
         joblib.dump(self.model, model_path)
         
-        # Save scaler
+        
         scaler_path = os.path.join(model_dir, 'scaler.pkl')
         joblib.dump(self.scaler, scaler_path)
         
-        # Verify files were saved
+        
         if not os.path.exists(model_path):
             raise Exception(f"❌ Model file not created: {model_path}")
         if not os.path.exists(scaler_path):
             raise Exception(f"❌ Scaler file not created: {scaler_path}")
         
-        # Check file sizes
+        
         model_size = os.path.getsize(model_path)
         scaler_size = os.path.getsize(scaler_path)
         
@@ -186,13 +186,13 @@ class MLModelTrainer:
         print(f"✓ Scaler saved to: {scaler_path}")
         print(f"  File size: {scaler_size / 1024:.2f} KB")
         
-        # Validate by loading
+        
         print("\nValidating saved models...")
         try:
             test_model = joblib.load(model_path)
             test_scaler = joblib.load(scaler_path)
             
-            # Test prediction
+            
             test_features = np.random.rand(1, 32)
             test_scaled = test_scaler.transform(test_features)
             test_pred = test_model.predict(test_scaled)
@@ -232,14 +232,14 @@ def main():
     print("MACHINE LEARNING MODEL TRAINING")
     print("="*50)
     
-    # Initialize trainer
+    
     trainer = MLModelTrainer()
     
-    # Set data directories
+    
     real_dir = 'data/train/real'
     fake_dir = 'data/train/fake'
     
-    # Check directories exist
+    
     if not os.path.exists(real_dir):
         print(f"\n❌ ERROR: Directory not found: {real_dir}")
         print(f"Please create this directory and add real audio files")
@@ -251,13 +251,13 @@ def main():
         return
     
     try:
-        # Load data
+        
         X, y = trainer.load_data(real_dir, fake_dir)
         
-        # Train model
+        
         metrics = trainer.train(X, y, optimize=False)
         
-        # Save model
+        
         trainer.save_model()
         
         print("\n" + "="*50)
