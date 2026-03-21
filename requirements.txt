@@ -17,5 +17,5 @@ wheel
 gunicorn
 flask-cors==4.0.0
 scipy==1.10.0
-numba==0.58.0
-gradio==4.19.0
+numba==0.58.1
+gradio==4.44.0
