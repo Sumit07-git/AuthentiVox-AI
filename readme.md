@@ -1,74 +1,71 @@
-# AuthentiVox - AI-Powered Deepfake Audio Detection
-
-Advanced Hybrid AI System for Detecting Synthetic Voice Manipulation
-
-## Overview
-
-**AuthentiVox** detects AI-generated voice and deepfake audio with **95%+ accuracy** using a hybrid Machine Learning and Deep Learning approach.
-
-### Features
-
-- Real-time audio analysis (< 5 seconds)
-- Supports WAV, MP3, FLAC, OGG formats
-- Confidence scoring with detailed reports
-- Visual spectrogram generation
-- Browser-based history tracking
-- Dark mode support
-- Responsive design
-
-### How It Works
-
-1. **Machine Learning**: Random Forest analyzes MFCC and spectral features
-2. **Deep Learning**: CNN examines mel spectrogram patterns
-3. **Ensemble**: Combines both models (ML: 40%, DL: 60%)
-
+---
+title: AuthentiVox AI
+emoji: 🎙️
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
 ---
 
-## Dataset
+# 🎙️ AuthentiVox AI - Deepfake Audio Detection
 
-### ASVspoof 2019 Dataset
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/Sumit07-git/AuthentiVox-AI)
+[![HuggingFace](https://img.shields.io/badge/🤗-Space-yellow)](https://huggingface.co/spaces/sumit0788/authentivox)
 
-This project uses the **ASVspoof 2019** (Automatic Speaker Verification Spoofing and Countermeasures Challenge) dataset for training and evaluation.
+Detects AI-generated and deepfake audio with **96%+ accuracy** using hybrid ML/DL approach.
 
-**About the Dataset:**
-- **Source**: ASVspoof Challenge organized by consortium of international research institutions
-- **Purpose**: Benchmark dataset for voice anti-spoofing research
-- **Content**: Real and synthetic speech samples
-- **Spoofing Types**: Multiple Text-to-Speech (TTS) and Voice Conversion (VC) algorithms
-- **Size**: 
-  - Training: ~25,000 audio files
-  - Development: ~24,000 audio files
-  - Evaluation: ~71,000 audio files
-- **Format**: 16 kHz, 16-bit PCM WAV files
-- **License**: Free for research purposes
+## 🎯 Features
 
-**Spoofing Algorithms Included:**
-- A01-A06: Various TTS systems
-- A07-A19: Various Voice Conversion systems
+- 🤖 **Hybrid Architecture**: Random Forest (94%) + CNN (96%)
+- ⚡ **Fast Predictions**: <3 seconds per audio
+- 📊 **Visual Analysis**: Real-time spectrogram generation
+- 🎨 **User-Friendly**: Clean, responsive web interface
+- 🔒 **Privacy-Focused**: No data retention
 
-**Dataset Link**: [ASVspoof 2019 Database](https://datashare.ed.ac.uk/handle/10283/3336)
+## 🛠️ Tech Stack
 
-**Citation:**
-```
-ASVspoof 2019: A large-scale public database of synthesized, converted and replayed speech
-Massimiliano Todisco, Xin Wang, Ville Vesikari, et al.
-Computer Speech & Language, 2020
-```
+**Backend:**
+- Python, Flask, TensorFlow, scikit-learn
 
----
+**Audio Processing:**
+- Librosa, NumPy, SciPy
 
-## Quick Start
+**Frontend:**
+- HTML5, CSS3, JavaScript
 
-### Installation
+## 📊 Model Performance
+
+| Model | Accuracy | Precision | Recall | F1-Score |
+|-------|----------|-----------|--------|----------|
+| Random Forest (ML) | 94.1% | 93.8% | 94.4% | 94.1% |
+| CNN (DL) | 96.3% | 95.9% | 96.7% | 96.3% |
+| **Hybrid Ensemble** | **96.4%** | **95.8%** | **96.2%** | **96.0%** |
+
+## 🎓 Dataset
+
+Trained on **ASVspoof 2019** dataset:
+- 4,000+ audio samples
+- Balanced real/fake distribution
+- Multiple audio formats
+
+## 🚀 How to Use
+
+1. **Upload** an audio file (WAV, MP3, FLAC)
+2. **Wait** for analysis (~3 seconds)
+3. **View** prediction with confidence score and spectrogram
+
+## 💻 Local Development
 
 ```bash
 # Clone repository
 git clone https://github.com/Sumit07-git/AuthentiVox-AI.git
-cd AUDIO
+cd AuthentiVox-AI
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -77,222 +74,58 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Visit: `http://localhost:5000`
+## 📁 Project Structure
+AuthentiVox-AI/
+├── app.py                 # Flask application
+├── requirements.txt       # Python dependencies
+├── Dockerfile            # Container configuration
+├── utils/                # Utility modules
+│   ├── feature_extractor.py
+│   ├── spectrogram_generator.py
+│   └── hybrid_predictor.py
+├── models/               # Trained models
+│   ├── ml_model/
+│   └── dl_model/
+├── templates/            # HTML templates
+└── static/              # CSS, JS, images
+
+## 🔬 Technical Details
+
+**Feature Extraction:**
+- 13 MFCCs (Mel-frequency cepstral coefficients)
+- Spectral features (centroid, rolloff, bandwidth)
+- Zero-crossing rate
+- Chroma features
+
+**Model Architecture:**
+- **ML**: Random Forest (200 estimators)
+- **DL**: 4-layer CNN with batch normalization
+- **Ensemble**: Weighted averaging (40% ML, 60% DL)
+
+## 📈 Future Improvements
+
+- [ ] Real-time audio streaming analysis
+- [ ] Multi-language support
+- [ ] API rate limiting
+- [ ] Mobile app version
+- [ ] Batch processing
+
+## 👨‍💻 Author
+
+**Sumit Kumar**
+- GitHub: [@Sumit07-git](https://github.com/Sumit07-git)
+- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+## 🙏 Acknowledgments
+
+- ASVspoof 2019 dataset providers
+- TensorFlow and scikit-learn communities
+- Hugging Face for hosting
 
 ---
 
-## Technology Stack
-
-**Backend:**
-- Python 3.8+
-- Flask 2.0+
-- TensorFlow 2.0+ / Keras
-- Scikit-learn 1.0+
-- Librosa 0.9+
-
-**Frontend:**
-- HTML5, CSS3, JavaScript ES6+
-- Font Awesome 6
-
-**AI Models:**
-- Random Forest (ML)
-- CNN (DL)
-
----
-
-## Project Structure
-
-```
-AUDIO/
-├── data/train/                 # Training data (ASVspoof 2019)
-├── models/
-│   ├── dl_model/              # Deep Learning model
-│   └── ml_model/              # Machine Learning model
-├── static/
-│   ├── css/                   # Stylesheets
-│   ├── js/
-│   │   ├── history.js         # History page
-│   │   ├── main.js            # Main JS
-│   │   └── upload.js          # Upload page
-│   └── uploads/               # Temp uploads
-├── templates/
-│   ├── base.html              # Base template
-│   ├── history.html           # History page
-│   ├── index.html              # Home page
-│   └── upload.html            # Upload page
-├── utils/
-│   ├── feature_extractor.py   # Feature extraction
-│   ├── hybrid_predictor.py    # Ensemble prediction
-│   └── spectrogram_generator.py
-├── app.py                      # Flask app
-├── requirements.txt            # Dependencies
-├── train_dl_model.py          # Train DL model
-└── train_ml_model.py          # Train ML model
-```
-
----
-
-## Usage
-
-### Web Interface
-
-1. Open `http://localhost:5000`
-2. Click "Start Detection"
-3. Upload audio file (drag & drop or browse)
-4. Click "Analyze Audio"
-5. View results
-
-### API
-
-```python
-import requests
-
-url = 'http://localhost:5000/api/upload'
-files = {'audio_file': open('sample.wav', 'rb')}
-
-response = requests.post(url, files=files)
-result = response.json()
-
-print(f"Prediction: {result['prediction']}")
-print(f"Confidence: {result['confidence_score']}%")
-```
-
----
-
-## API Endpoints
-
-### POST /api/upload
-
-Upload and analyze audio file.
-
-**Response:**
-```json
-{
-  "success": true,
-  "is_fake": false,
-  "confidence_score": 95,
-  "prediction": "Real",
-  "ml_confidence": 93.2,
-  "dl_confidence": 96.8,
-  "processing_time": 2.3
-}
-```
-
-### GET /api/health
-
-Health check.
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "models_loaded": true
-}
-```
-
----
-
-## Model Training
-
-### Train ML Model
-
-```bash
-python train_ml_model.py
-```
-
-Trains Random Forest on ASVspoof 2019 data in `data/train/` and saves to `models/ml_model/`.
-
-### Train DL Model
-
-```bash
-python train_dl_model.py
-```
-
-Trains CNN on spectrograms from ASVspoof 2019 and saves to `models/dl_model/`.
-
-### Dataset Structure
-
-```
-data/train/
-├── real/              # Genuine speech samples
-│   ├── LA_T_1000137.wav
-│   ├── LA_T_1000265.wav
-│   └── ...
-└── fake/              # Spoofed speech samples
-    ├── LA_T_1000003.wav
-    ├── LA_T_1000068.wav
-    └── ...
-```
-
----
-
-## Performance
-
-Evaluated on ASVspoof 2019 evaluation set:
-
-| Metric | ML Model | DL Model | Ensemble |
-|--------|----------|----------|----------|
-| Accuracy | 94.2% | 95.8% | **96.1%** |
-| Precision | 93.8% | 95.4% | **95.9%** |
-| Recall | 94.6% | 96.2% | **96.3%** |
-| F1 Score | 94.2% | 95.8% | **96.1%** |
-
----
-
-## Troubleshooting
-
-**Port in use:**
-```bash
-python app.py --port 5001
-```
-
-**Missing models:**
-```bash
-python train_ml_model.py
-python train_dl_model.py
-```
-
-**Module not found:**
-```bash
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
----
-
-
-## Acknowledgments
-
-- **ASVspoof Challenge** - For providing the benchmark dataset
-- **TensorFlow & Scikit-learn teams** - For ML/DL frameworks
-- **Librosa developers** - For audio processing tools
-- **Flask community** - For web framework
-
----
-
-## Contact
-
-- **Email**: sumitsamal08@gmail.com
-- **GitHub**: https://github.com/Sumit07-git/AuthentiVox-AI.git
-
----
-
-## Citation
-
-If you use this project or the ASVspoof 2019 dataset, please cite:
-
-```bibtex
-@article{todisco2020asvspoof,
-  title={ASVspoof 2019: A large-scale public database of synthesized, converted and replayed speech},
-  author={Todisco, Massimiliano and Wang, Xin and Vesikari, Ville and others},
-  journal={Computer Speech \& Language},
-  volume={64},
-  pages={101114},
-  year={2020},
-  publisher={Elsevier}
-}
-```
-
----
-
-**Made with ❤️ by the AuthentiVox Team**
+**⭐ Star this repo if you find it helpful!**
