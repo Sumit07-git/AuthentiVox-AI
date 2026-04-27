@@ -150,7 +150,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 new Promise(resolve => setTimeout(resolve, 2200))
             ]);
 
-            // Check response status BEFORE parsing JSON
             if (!response.ok) {
                 let errorMsg = 'Server error (' + response.status + ')';
 
@@ -158,11 +157,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const errorData = await response.json();
                     errorMsg = errorData.error || errorMsg;
                 } catch (parseError) {
-                    // Response was not JSON (502 returns HTML or empty body)
                     const text = await response.text().catch(() => '');
                     console.error('Server returned ' + response.status + ':', text.substring(0, 200));
 
-                    // Provide helpful error messages per status code
                     if (response.status === 502) {
                         errorMsg = 'Server is temporarily unavailable. Please try again in a moment.';
                     } else if (response.status === 413) {
@@ -185,7 +182,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Safe JSON parsing even for 200 responses
             let data;
             try {
                 data = await response.json();
@@ -209,7 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error:', error);
 
-            // Detect specific network errors
             let errorMsg = 'Network error. Please check your connection and try again.';
             if (error.name === 'AbortError') {
                 errorMsg = 'Request was cancelled. Please try again.';
@@ -337,26 +332,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // FIX: Always reset both classes first before applying the correct one
+        resultsHero.classList.remove('real', 'fake');
+        heroBadge.classList.remove('real', 'fake');
+
         if (data.is_fake) {
-            if (resultsHero) {
-                resultsHero.classList.add('fake');
-                resultsHero.classList.remove('real');
-            }
+            resultsHero.classList.add('fake');
             heroBadge.classList.add('fake');
-            heroBadge.classList.remove('real');
             heroLabel.textContent = 'SYNTHETIC';
             heroTitle.textContent = 'Fake Audio Detected';
             heroBadge.querySelector('i').className = 'fas fa-exclamation-triangle';
         } else {
-            if (resultsHero) {
-                resultsHero.classList.add('real');
-                resultsHero.classList.remove('fake');
-            }
+            resultsHero.classList.add('real');
             heroBadge.classList.add('real');
-            heroBadge.classList.remove('fake');
             heroLabel.textContent = 'AUTHENTIC';
             heroTitle.textContent = 'Real Audio Detected';
-            heroBadge.querySelector('i').className = 'fas fa-shield-check';
+            heroBadge.querySelector('i').className = 'fas fa-shield-alt';
         }
         heroConfidence.textContent = data.confidence_score + '%';
     }
@@ -365,10 +356,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const predictionText = document.getElementById('predictionText');
         const confidenceText = document.getElementById('confidenceText');
         const processingTimeEl = document.getElementById('processingTime');
-        
-        if (predictionText) predictionText.textContent = data.is_fake ? 'SYNTHETIC' : 'AUTHENTIC';
+
+        // FIX: Update prediction text AND the stat card icon class dynamically
+        if (predictionText) {
+            predictionText.textContent = data.is_fake ? 'SYNTHETIC' : 'AUTHENTIC';
+        }
         if (confidenceText) confidenceText.textContent = data.confidence_score + '%';
         if (processingTimeEl) processingTimeEl.textContent = processingTime + 's';
+
+        // FIX: Update the icon container class so the color matches the result
+        const predictionStatIcon = document.querySelector('#resultsDashboard .stat-card:first-child .stat-icon');
+        if (predictionStatIcon) {
+            predictionStatIcon.classList.remove('real', 'fake');
+            predictionStatIcon.classList.add(data.is_fake ? 'fake' : 'real');
+            predictionStatIcon.querySelector('i').className = data.is_fake
+                ? 'fas fa-times-circle'
+                : 'fas fa-check-circle';
+        }
         
         const circleProgress = document.getElementById('circleProgress');
         const circlePercentage = document.getElementById('circlePercentage');
@@ -393,6 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     defs.appendChild(gradient);
                 }
                 gradient.innerHTML = '';
+                // FIX: Use red gradient for fake, green for real
                 if (data.is_fake) {
                     const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
                     stop1.setAttribute('offset', '0%');
@@ -469,23 +474,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+
+        // FIX: Reset all indicators to 'pass' state first, then apply fake-specific overrides
         const indicators = document.querySelectorAll('.indicator-item');
+        indicators.forEach((indicator) => {
+            const badge = indicator.querySelector('.indicator-badge');
+            if (badge) {
+                badge.classList.remove('fail');
+                badge.classList.add('pass');
+                badge.textContent = '✓';
+            }
+        });
+
+        // FIX: For real audio restore positive descriptions; for fake set negative ones
+        const indicatorDescriptions = [
+            {
+                real: 'Natural voice characteristics detected',
+                fake: 'Unnatural frequency patterns found'
+            },
+            {
+                real: 'Consistent energy distribution',
+                fake: 'Irregular energy distribution detected'
+            },
+            {
+                real: 'No synthetic markers found',
+                fake: 'Synthetic markers detected'
+            },
+            {
+                real: 'Authentic vocal patterns',
+                fake: 'Unnatural vocal patterns'
+            }
+        ];
+
         indicators.forEach((indicator, index) => {
             const badge = indicator.querySelector('.indicator-badge');
             const content = indicator.querySelector('.indicator-content p');
-            if (data.is_fake && badge && content) {
-                if (index === 2) {
-                    badge.classList.remove('pass');
-                    badge.classList.add('fail');
-                    badge.textContent = '✗';
-                    content.textContent = 'Synthetic markers detected';
-                }
-                if (index === 3) {
-                    badge.classList.remove('pass');
-                    badge.classList.add('fail');
-                    badge.textContent = '✗';
-                    content.textContent = 'Unnatural vocal patterns';
-                }
+            if (!badge || !content || !indicatorDescriptions[index]) return;
+
+            if (data.is_fake) {
+                badge.classList.remove('pass');
+                badge.classList.add('fail');
+                badge.textContent = '✗';
+                content.textContent = indicatorDescriptions[index].fake;
+            } else {
+                badge.classList.remove('fail');
+                badge.classList.add('pass');
+                badge.textContent = '✓';
+                content.textContent = indicatorDescriptions[index].real;
             }
         });
     }
@@ -558,7 +593,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function resetToUpload() {
-        if (resultsHero) resultsHero.style.display = 'none';
+        if (resultsHero) {
+            resultsHero.style.display = 'none';
+            // FIX: Clean up result classes so the next analysis starts fresh
+            resultsHero.classList.remove('real', 'fake');
+        }
         if (resultsDashboard) resultsDashboard.style.display = 'none';
         if (audioAnalysisSection) audioAnalysisSection.style.display = 'none';
         if (spectrogramFullSection) spectrogramFullSection.style.display = 'none';
