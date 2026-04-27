@@ -262,9 +262,9 @@ def upload_file():
             'confidence_score': round(hybrid_conf * 100, 2),
             # Per-model details for the frontend breakdown bars
             'ml_prediction': result.get('ml_prediction'),
-            'ml_confidence': round(result['ml_confidence'] * 100, 2) if result.get('ml_confidence') is not None else None,
+            'ml_confidence': round(result.get('ml_confidence') * 100, 2) if result.get('ml_confidence') is not None else None,
             'dl_prediction': result.get('dl_prediction'),
-            'dl_confidence': round(result['dl_confidence'] * 100, 2) if result.get('dl_confidence') is not None else None,
+            'dl_confidence': round(result.get('dl_confidence') * 100, 2) if result.get('dl_confidence') is not None else None,
             'spectrogram_path': spectrogram_path
         }
         

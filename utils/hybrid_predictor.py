@@ -12,6 +12,15 @@ from utils.feature_extractor import AudioFeatureExtractor
 from utils.spectrogram_generator import SpectrogramGenerator
 
 
+def _to_real_prob(prediction, confidence):
+    """Convert a (prediction, confidence) pair to P(real).
+
+    ``confidence`` is always the probability of the *predicted* class, so
+    when the predicted class is FAKE (0) we need to invert it to get the
+    probability assigned to the REAL (1) class.
+    """
+    return confidence if prediction == 1 else (1 - confidence)
+
 class HybridPredictor:
     """
     Hybrid predictor combining ML and DL models
@@ -109,8 +118,8 @@ class HybridPredictor:
                 if file_size < 10000:
                     # A small file may be a Git LFS pointer — confirm by reading its header
                     try:
-                        with open(path, 'rb') as _f:
-                            header = _f.read(128).decode('utf-8', errors='ignore')
+                        with open(path, 'rb') as f:
+                            header = f.read(128).decode('utf-8', errors='ignore')
                         if 'git-lfs' in header or 'version https://' in header:
                             print(f"⚠ Skipping {path} - Git LFS pointer file (not the real model). "
                                   f"Run `git lfs pull` to download the actual model.")
@@ -285,8 +294,8 @@ class HybridPredictor:
         
         if method == 'weighted_average':
             
-            ml_prob = ml_conf if ml_pred == 1 else (1 - ml_conf)
-            dl_prob = dl_conf if dl_pred == 1 else (1 - dl_conf)
+            ml_prob = _to_real_prob(ml_pred, ml_conf)
+            dl_prob = _to_real_prob(dl_pred, dl_conf)
             
             
             hybrid_prob = (ml_weight * ml_prob) + (dl_weight * dl_prob)
@@ -303,9 +312,7 @@ class HybridPredictor:
             else:
                 # Models disagree: convert both confidences to P(real) so they
                 # are on the same scale before comparing.
-                ml_real_prob = ml_conf if ml_pred == 1 else (1 - ml_conf)
-                dl_real_prob = dl_conf if dl_pred == 1 else (1 - dl_conf)
-                if ml_real_prob >= dl_real_prob:
+                if _to_real_prob(ml_pred, ml_conf) >= _to_real_prob(dl_pred, dl_conf):
                     result['hybrid_prediction'] = ml_pred
                     result['hybrid_confidence'] = ml_conf
                 else:
@@ -314,9 +321,7 @@ class HybridPredictor:
         
         elif method == 'max_confidence':
             # Convert to P(real) so the comparison is on a consistent scale.
-            ml_real_prob = ml_conf if ml_pred == 1 else (1 - ml_conf)
-            dl_real_prob = dl_conf if dl_pred == 1 else (1 - dl_conf)
-            if ml_real_prob >= dl_real_prob:
+            if _to_real_prob(ml_pred, ml_conf) >= _to_real_prob(dl_pred, dl_conf):
                 result['hybrid_prediction'] = ml_pred
                 result['hybrid_confidence'] = ml_conf
             else:
