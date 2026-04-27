@@ -241,14 +241,30 @@ def upload_file():
         logger.info("Running prediction...")
         result = predictor.predict_hybrid(filepath, method='weighted_average')
         logger.info(f"Result: {result}")
-        
+
+        hybrid_pred = result.get('hybrid_prediction')
+        hybrid_conf = result.get('hybrid_confidence')
+
+        # Both models failed — return a clear error instead of a silent wrong label
+        if hybrid_pred is None or hybrid_conf is None:
+            logger.error("Prediction failed: both models returned None")
+            return jsonify({
+                'success': False,
+                'error': 'Could not determine a prediction. Please try again or use a different audio file.'
+            }), 500
+
         response = {
             'success': True,
             'filename': filename,
             'duration': round(duration, 2),
-            'prediction': 'REAL' if result['hybrid_prediction'] == 1 else 'FAKE',
-            'is_fake': result['hybrid_prediction'] == 0,
-            'confidence_score': round(result['hybrid_confidence'] * 100, 2),
+            'prediction': 'REAL' if hybrid_pred == 1 else 'FAKE',
+            'is_fake': hybrid_pred == 0,
+            'confidence_score': round(hybrid_conf * 100, 2),
+            # Per-model details for the frontend breakdown bars
+            'ml_prediction': result.get('ml_prediction'),
+            'ml_confidence': round(result['ml_confidence'] * 100, 2) if result.get('ml_confidence') is not None else None,
+            'dl_prediction': result.get('dl_prediction'),
+            'dl_confidence': round(result['dl_confidence'] * 100, 2) if result.get('dl_confidence') is not None else None,
             'spectrogram_path': spectrogram_path
         }
         

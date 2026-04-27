@@ -436,13 +436,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const dlValue = document.getElementById('dlValue');
             
             if (mlFill && mlValue) {
-                const mlConfidence = Math.max(60, data.confidence_score - Math.random() * 10);
+                // Use the real per-model confidence returned by the API when available.
+                // Fall back to the hybrid score only as a last resort.
+                const mlConfidence = (data.ml_confidence !== null && data.ml_confidence !== undefined)
+                    ? data.ml_confidence
+                    : data.confidence_score;
                 mlFill.style.width = mlConfidence + '%';
                 mlValue.textContent = mlConfidence.toFixed(1) + '%';
             }
             
             if (dlFill && dlValue) {
-                const dlConfidence = Math.min(98, data.confidence_score + Math.random() * 10);
+                const dlConfidence = (data.dl_confidence !== null && data.dl_confidence !== undefined)
+                    ? data.dl_confidence
+                    : data.confidence_score;
                 dlFill.style.width = dlConfidence + '%';
                 dlValue.textContent = dlConfidence.toFixed(1) + '%';
             }

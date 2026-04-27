@@ -106,8 +106,18 @@ class HybridPredictor:
             
             try:
                 file_size = os.path.getsize(path)
-                if file_size < 10000:  
-                    print(f"⚠ Skipping {path} - file too small ({file_size} bytes, likely LFS pointer)")
+                if file_size < 10000:
+                    # A small file may be a Git LFS pointer — confirm by reading its header
+                    try:
+                        with open(path, 'rb') as _f:
+                            header = _f.read(128).decode('utf-8', errors='ignore')
+                        if 'git-lfs' in header or 'version https://' in header:
+                            print(f"⚠ Skipping {path} - Git LFS pointer file (not the real model). "
+                                  f"Run `git lfs pull` to download the actual model.")
+                        else:
+                            print(f"⚠ Skipping {path} - file too small ({file_size} bytes, likely corrupted)")
+                    except Exception:
+                        print(f"⚠ Skipping {path} - file too small ({file_size} bytes, likely LFS pointer)")
                     continue
             except Exception as e:
                 print(f"⚠ Cannot check size of {path}: {e}")
@@ -291,8 +301,11 @@ class HybridPredictor:
                 result['hybrid_prediction'] = ml_pred
                 result['hybrid_confidence'] = (ml_conf + dl_conf) / 2
             else:
-                
-                if ml_conf > dl_conf:
+                # Models disagree: convert both confidences to P(real) so they
+                # are on the same scale before comparing.
+                ml_real_prob = ml_conf if ml_pred == 1 else (1 - ml_conf)
+                dl_real_prob = dl_conf if dl_pred == 1 else (1 - dl_conf)
+                if ml_real_prob >= dl_real_prob:
                     result['hybrid_prediction'] = ml_pred
                     result['hybrid_confidence'] = ml_conf
                 else:
@@ -300,8 +313,10 @@ class HybridPredictor:
                     result['hybrid_confidence'] = dl_conf
         
         elif method == 'max_confidence':
-            
-            if ml_conf > dl_conf:
+            # Convert to P(real) so the comparison is on a consistent scale.
+            ml_real_prob = ml_conf if ml_pred == 1 else (1 - ml_conf)
+            dl_real_prob = dl_conf if dl_pred == 1 else (1 - dl_conf)
+            if ml_real_prob >= dl_real_prob:
                 result['hybrid_prediction'] = ml_pred
                 result['hybrid_confidence'] = ml_conf
             else:
