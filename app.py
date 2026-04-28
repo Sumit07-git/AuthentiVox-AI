@@ -1,8 +1,3 @@
-"""
-Flask Application - Hybrid Deepfake Audio Detection System
-OPTIMIZED FOR RENDER DEPLOYMENT
-"""
-
 import os
 import sys
 import logging
@@ -204,7 +199,6 @@ def upload_file():
 
         logger.info(f"Duration: {duration:.2f}s")
 
-        # Generate spectrogram
         spectrogram_path = None
         try:
             import matplotlib
@@ -233,12 +227,10 @@ def upload_file():
         except Exception as e:
             logger.warning(f"Spectrogram failed: {e}")
 
-        # Predict
         logger.info("Running prediction...")
         result = predictor.predict_hybrid(filepath, method='weighted_average')
         logger.info(f"Raw result: {result}")
 
-        # FIX: Guard against both models failing (hybrid_prediction would be None)
         if result['hybrid_prediction'] is None:
             logger.error("Both models failed to produce a prediction")
             return jsonify({
@@ -246,8 +238,6 @@ def upload_file():
                 'error': 'Audio analysis failed. The file may be corrupted or in an unsupported format.'
             }), 500
 
-        # FIX: hybrid_confidence is now always P(predicted_class), i.e. the
-        # confidence in whatever label was chosen — safe to display directly.
         is_fake = (result['hybrid_prediction'] == 0)
         confidence_score = round(result['hybrid_confidence'] * 100, 2)
 
@@ -259,7 +249,6 @@ def upload_file():
             'is_fake': is_fake,
             'confidence_score': confidence_score,
             'spectrogram_path': spectrogram_path,
-            # Debug info — useful during testing, harmless in production
             'debug': {
                 'ml_prediction': result['ml_prediction'],
                 'ml_confidence': round(result['ml_confidence'] * 100, 2) if result['ml_confidence'] is not None else None,
@@ -269,8 +258,10 @@ def upload_file():
             }
         }
 
-        logger.info(f"SUCCESS: {response['prediction']} ({response['confidence_score']}%) "
-                    f"[ML={result['ml_prediction']}, DL={result['dl_prediction']}, method={result['method']}]")
+        logger.info(
+            f"SUCCESS: {response['prediction']} ({response['confidence_score']}%) "
+            f"[ML={result['ml_prediction']}, DL={result['dl_prediction']}, method={result['method']}]"
+        )
         return jsonify(response), 200
 
     except Exception as e:

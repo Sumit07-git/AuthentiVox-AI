@@ -9,8 +9,6 @@ train
 
 # Virtual Environment
 venv/
-env/
-ENV/
 
 # Flask
 instance/
@@ -38,6 +36,8 @@ Thumbs.db
 # Temporary
 *.tmp
 temp/
+.gitignore
+.gitattributes
 
 # Model checkpoints (optional - if you want to exclude large checkpoints)
 # models/dl_model/checkpoints/

@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const uploadSection = document.getElementById('uploadSection');
     const uploadArea = document.getElementById('uploadArea');
     const audioFileInput = document.getElementById('audioFile');
@@ -11,115 +11,116 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingState = document.getElementById('loadingState');
     const errorMessage = document.getElementById('errorMessage');
     const errorText = document.getElementById('errorText');
-    
+
     const resultsHero = document.getElementById('resultsHero');
     const resultsDashboard = document.getElementById('resultsDashboard');
     const audioAnalysisSection = document.getElementById('audioAnalysisSection');
     const spectrogramFullSection = document.getElementById('spectrogramFullSection');
     const technicalSection = document.getElementById('technicalSection');
     const actionsSection = document.getElementById('actionsSection');
-    
+
     let selectedFile = null;
     let isAnalyzing = false;
     let analysisStartTime = null;
-    
-    audioFileInput.addEventListener('change', function(e) {
+
+    audioFileInput.addEventListener('change', function (e) {
         handleFileSelect(e.target.files[0]);
     });
-    
-    uploadArea.addEventListener('dragover', function(e) {
+
+    uploadArea.addEventListener('dragover', function (e) {
         e.preventDefault();
         e.stopPropagation();
         uploadArea.classList.add('dragover');
     });
-    
-    uploadArea.addEventListener('dragleave', function(e) {
+
+    uploadArea.addEventListener('dragleave', function (e) {
         e.preventDefault();
         e.stopPropagation();
         uploadArea.classList.remove('dragover');
     });
-    
-    uploadArea.addEventListener('drop', function(e) {
+
+    uploadArea.addEventListener('drop', function (e) {
         e.preventDefault();
         e.stopPropagation();
         uploadArea.classList.remove('dragover');
-        
+
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             handleFileSelect(files[0]);
         }
     });
-    
-    uploadArea.addEventListener('click', function(e) {
+
+    uploadArea.addEventListener('click', function (e) {
         const isVisible = window.getComputedStyle(uploadArea).display !== 'none';
         if (isVisible && !e.target.closest('label') && !e.target.closest('input') && !isAnalyzing) {
             audioFileInput.click();
         }
     });
-    
-    removeFileBtn.addEventListener('click', function(e) {
+
+    removeFileBtn.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
         resetUpload();
     });
-    
-    analyzeBtn.addEventListener('click', function(e) {
+
+    analyzeBtn.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
         if (selectedFile) {
             analyzeAudio();
         }
     });
-    
+
     const analyzeAnotherBtn = document.getElementById('analyzeAnotherBtn');
     if (analyzeAnotherBtn) {
         analyzeAnotherBtn.addEventListener('click', resetToUpload);
     }
-    
+
     const downloadReportBtn = document.getElementById('downloadReportBtn');
     if (downloadReportBtn) {
         downloadReportBtn.addEventListener('click', downloadReport);
     }
-    
+
     const viewHistoryBtn = document.getElementById('viewHistoryBtn');
     if (viewHistoryBtn) {
         viewHistoryBtn.addEventListener('click', () => {
             window.location.href = '/history';
         });
     }
-    
+
     const shareResultsBtn = document.getElementById('shareResultsBtn');
     if (shareResultsBtn) {
         shareResultsBtn.addEventListener('click', shareResults);
     }
-    
+
     function handleFileSelect(file) {
         if (!file) return;
+
         const validTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/flac', 'audio/ogg'];
         const validExtensions = ['.wav', '.mp3', '.flac', '.ogg'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-        
+
         if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
             showError('Invalid file format. Please upload WAV, MP3, FLAC, or OGG files.');
             return;
         }
-        
+
         if (file.size > 16 * 1024 * 1024) {
             showError('File too large. Maximum size is 16MB.');
             return;
         }
-        
+
         selectedFile = file;
         fileName.textContent = file.name;
         fileSize.textContent = formatFileSize(file.size);
-        
+
         const fileURL = URL.createObjectURL(file);
         audioPlayer.src = fileURL;
         uploadArea.style.display = 'none';
         fileInfo.style.display = 'block';
         hideError();
     }
-    
+
     function resetUpload() {
         selectedFile = null;
         isAnalyzing = false;
@@ -130,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadingState.style.display = 'none';
         hideError();
     }
-    
+
     async function analyzeAudio() {
         if (!selectedFile || isAnalyzing) return;
 
@@ -218,24 +219,27 @@ document.addEventListener('DOMContentLoaded', function() {
             isAnalyzing = false;
         }
     }
-    
+
     function simulateProgress() {
         const progressFill = document.getElementById('progressFill');
         const steps = document.querySelectorAll('.loading-steps .step');
+
         progressFill.style.transition = 'none';
         progressFill.style.width = '0%';
+
         steps.forEach(step => {
             step.classList.remove('active', 'complete');
             step.querySelector('i').className = 'fas fa-circle';
         });
+
         void progressFill.offsetWidth;
         progressFill.style.transition = '';
-        
+
         let progress = 0;
         const interval = setInterval(() => {
             progress += 5;
             progressFill.style.width = progress + '%';
-            
+
             if (progress >= 25 && progress < 50) {
                 steps[0].classList.add('complete');
                 steps[0].querySelector('i').className = 'fas fa-check-circle';
@@ -255,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 100);
     }
-    
+
     function saveToHistory(data) {
         try {
             let history = JSON.parse(localStorage.getItem('analysisHistory') || '[]');
@@ -267,6 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 confidence: data.confidence_score,
                 timestamp: new Date().toISOString()
             };
+
             history.unshift(historyItem);
             if (history.length > 100) {
                 history = history.slice(0, 100);
@@ -276,63 +281,71 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error saving to history:', error);
         }
     }
-    
+
     function displayResults(data) {
         const processingTime = ((Date.now() - analysisStartTime) / 1000).toFixed(1);
+
         saveToHistory(data);
+
         if (loadingState) loadingState.style.display = 'none';
         if (uploadSection) uploadSection.style.display = 'none';
+
         setTimeout(() => {
             if (resultsHero) {
                 resultsHero.style.display = 'block';
                 updateHeroSection(data);
             }
+
             setTimeout(() => {
                 if (resultsDashboard) {
                     resultsDashboard.style.display = 'block';
                     updateDashboardSection(data, processingTime);
                 }
             }, 200);
+
             setTimeout(() => {
                 if (audioAnalysisSection) {
                     audioAnalysisSection.style.display = 'block';
                     updateAudioAnalysisSection(data);
                 }
             }, 400);
+
             if (data.spectrogram_path && spectrogramFullSection) {
                 setTimeout(() => {
                     spectrogramFullSection.style.display = 'block';
                     updateSpectrogramSection(data);
                 }, 600);
             }
+
             setTimeout(() => {
                 if (technicalSection) {
                     technicalSection.style.display = 'block';
                     updateTechnicalSection(data);
                 }
             }, 800);
+
             setTimeout(() => {
                 if (actionsSection) {
                     actionsSection.style.display = 'block';
                 }
             }, 1000);
         }, 100);
+
         isAnalyzing = false;
     }
-    
+
     function updateHeroSection(data) {
         const resultsHero = document.getElementById('resultsHero');
         const heroBadge = document.getElementById('heroBadge');
         const heroLabel = document.getElementById('heroLabel');
         const heroTitle = document.getElementById('heroTitle');
         const heroConfidence = document.getElementById('heroConfidence');
-        
+
         if (!heroBadge || !heroLabel || !heroConfidence || !heroTitle) {
             console.warn('Hero section elements not found');
             return;
         }
-        
-        // FIX: Always reset both classes first before applying the correct one
+
         resultsHero.classList.remove('real', 'fake');
         heroBadge.classList.remove('real', 'fake');
 
@@ -349,22 +362,21 @@ document.addEventListener('DOMContentLoaded', function() {
             heroTitle.textContent = 'Real Audio Detected';
             heroBadge.querySelector('i').className = 'fas fa-shield-alt';
         }
+
         heroConfidence.textContent = data.confidence_score + '%';
     }
-    
+
     function updateDashboardSection(data, processingTime) {
         const predictionText = document.getElementById('predictionText');
         const confidenceText = document.getElementById('confidenceText');
         const processingTimeEl = document.getElementById('processingTime');
 
-        // FIX: Update prediction text AND the stat card icon class dynamically
         if (predictionText) {
             predictionText.textContent = data.is_fake ? 'SYNTHETIC' : 'AUTHENTIC';
         }
         if (confidenceText) confidenceText.textContent = data.confidence_score + '%';
         if (processingTimeEl) processingTimeEl.textContent = processingTime + 's';
 
-        // FIX: Update the icon container class so the color matches the result
         const predictionStatIcon = document.querySelector('#resultsDashboard .stat-card:first-child .stat-icon');
         if (predictionStatIcon) {
             predictionStatIcon.classList.remove('real', 'fake');
@@ -373,16 +385,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? 'fas fa-times-circle'
                 : 'fas fa-check-circle';
         }
-        
+
         const circleProgress = document.getElementById('circleProgress');
         const circlePercentage = document.getElementById('circlePercentage');
-        
+
         if (circleProgress && circlePercentage) {
             const circumference = 2 * Math.PI * 90;
             const offset = circumference - (data.confidence_score / 100) * circumference;
             const svg = circleProgress.closest('svg');
+
             if (svg) {
                 let gradient = svg.querySelector('#gradient');
+
                 if (!gradient) {
                     const defs = svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
                     if (!svg.querySelector('defs')) {
@@ -396,8 +410,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     gradient.setAttribute('y2', '100%');
                     defs.appendChild(gradient);
                 }
+
                 gradient.innerHTML = '';
-                // FIX: Use red gradient for fake, green for real
+
                 if (data.is_fake) {
                     const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
                     stop1.setAttribute('offset', '0%');
@@ -418,12 +433,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     gradient.appendChild(stop2);
                 }
             }
+
             setTimeout(() => {
                 circleProgress.style.strokeDashoffset = offset;
                 animateNumber(circlePercentage, 0, data.confidence_score, 2000);
             }, 300);
         }
-        
+
         const confidenceDescription = document.getElementById('confidenceDescription');
         if (confidenceDescription) {
             if (data.confidence_score >= 90) {
@@ -434,18 +450,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 confidenceDescription.textContent = 'The AI model has moderate confidence. Some indicators are ambiguous.';
             }
         }
+
         setTimeout(() => {
             const mlFill = document.getElementById('mlFill');
             const mlValue = document.getElementById('mlValue');
             const dlFill = document.getElementById('dlFill');
             const dlValue = document.getElementById('dlValue');
-            
+
             if (mlFill && mlValue) {
                 const mlConfidence = Math.max(60, data.confidence_score - Math.random() * 10);
                 mlFill.style.width = mlConfidence + '%';
                 mlValue.textContent = mlConfidence.toFixed(1) + '%';
             }
-            
+
             if (dlFill && dlValue) {
                 const dlConfidence = Math.min(98, data.confidence_score + Math.random() * 10);
                 dlFill.style.width = dlConfidence + '%';
@@ -453,18 +470,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 800);
     }
-    
+
     function updateAudioAnalysisSection(data) {
         const analysisFileName = document.getElementById('analysisFileName');
         const analysisFileSize = document.getElementById('analysisFileSize');
         const resultsAudioPlayer = document.getElementById('resultsAudioPlayer');
-        
+
         if (analysisFileName) analysisFileName.textContent = selectedFile.name;
         if (analysisFileSize) analysisFileSize.textContent = formatFileSize(selectedFile.size);
-        
+
         if (resultsAudioPlayer) {
             resultsAudioPlayer.src = URL.createObjectURL(selectedFile);
-            resultsAudioPlayer.addEventListener('loadedmetadata', function() {
+            resultsAudioPlayer.addEventListener('loadedmetadata', function () {
                 const duration = Math.floor(resultsAudioPlayer.duration);
                 const minutes = Math.floor(duration / 60);
                 const seconds = duration % 60;
@@ -475,7 +492,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // FIX: Reset all indicators to 'pass' state first, then apply fake-specific overrides
         const indicators = document.querySelectorAll('.indicator-item');
         indicators.forEach((indicator) => {
             const badge = indicator.querySelector('.indicator-badge');
@@ -486,24 +502,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // FIX: For real audio restore positive descriptions; for fake set negative ones
         const indicatorDescriptions = [
-            {
-                real: 'Natural voice characteristics detected',
-                fake: 'Unnatural frequency patterns found'
-            },
-            {
-                real: 'Consistent energy distribution',
-                fake: 'Irregular energy distribution detected'
-            },
-            {
-                real: 'No synthetic markers found',
-                fake: 'Synthetic markers detected'
-            },
-            {
-                real: 'Authentic vocal patterns',
-                fake: 'Unnatural vocal patterns'
-            }
+            { real: 'Natural voice characteristics detected', fake: 'Unnatural frequency patterns found' },
+            { real: 'Consistent energy distribution', fake: 'Irregular energy distribution detected' },
+            { real: 'No synthetic markers found', fake: 'Synthetic markers detected' },
+            { real: 'Authentic vocal patterns', fake: 'Unnatural vocal patterns' }
         ];
 
         indicators.forEach((indicator, index) => {
@@ -524,15 +527,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     function updateSpectrogramSection(data) {
         const mainSpectrogramImage = document.getElementById('mainSpectrogramImage');
         if (mainSpectrogramImage) {
             mainSpectrogramImage.src = data.spectrogram_path;
         }
+
         const downloadSpectrogramBtn = document.getElementById('downloadSpectrogramBtn');
         if (downloadSpectrogramBtn) {
-            downloadSpectrogramBtn.addEventListener('click', function(e) {
+            downloadSpectrogramBtn.addEventListener('click', function (e) {
                 e.preventDefault();
                 fetch(data.spectrogram_path)
                     .then(response => response.blob())
@@ -559,16 +563,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
-    
+
     function updateTechnicalSection(data) {
         const mlScore = document.getElementById('mlScore');
         const dlScore = document.getElementById('dlScore');
+
         if (mlScore) {
             mlScore.textContent = (Math.max(85, data.confidence_score - 5) + Math.random() * 3).toFixed(1) + '%';
         }
         if (dlScore) {
             dlScore.textContent = (Math.min(98, data.confidence_score + 5) + Math.random() * 2).toFixed(1) + '%';
         }
+
         const timelineItems = document.querySelectorAll('.timeline-item');
         timelineItems.forEach((item, index) => {
             setTimeout(() => {
@@ -576,12 +582,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }, index * 200);
         });
     }
-    
+
     function animateNumber(element, start, end, duration) {
         const range = end - start;
         const increment = range / (duration / 16);
         let current = start;
-        
+
         const timer = setInterval(() => {
             current += increment;
             if (current >= end) {
@@ -591,11 +597,10 @@ document.addEventListener('DOMContentLoaded', function() {
             element.textContent = Math.round(current) + '%';
         }, 16);
     }
-    
+
     function resetToUpload() {
         if (resultsHero) {
             resultsHero.style.display = 'none';
-            // FIX: Clean up result classes so the next analysis starts fresh
             resultsHero.classList.remove('real', 'fake');
         }
         if (resultsDashboard) resultsDashboard.style.display = 'none';
@@ -604,36 +609,38 @@ document.addEventListener('DOMContentLoaded', function() {
         if (technicalSection) technicalSection.style.display = 'none';
         if (actionsSection) actionsSection.style.display = 'none';
         if (uploadSection) uploadSection.style.display = 'block';
+
         resetUpload();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    
+
     function downloadReport() {
         const predictionText = document.getElementById('predictionText');
         const confidenceText = document.getElementById('confidenceText');
-        const reportContent = 
-'AUTHENTIVOX AUDIO ANALYSIS REPORT\n' +
-'==================================\n\n' +
-'File: ' + (selectedFile ? selectedFile.name : 'Unknown') + '\n' +
-'Date: ' + new Date().toLocaleString() + '\n\n' +
-'ANALYSIS RESULT\n' +
-'---------------\n' +
-'Prediction: ' + (predictionText ? predictionText.textContent : 'N/A') + '\n' +
-'Confidence: ' + (confidenceText ? confidenceText.textContent : 'N/A') + '\n\n' +
-'DETECTION METHOD\n' +
-'----------------\n' +
-'Hybrid AI System combining:\n' +
-'- Machine Learning (Random Forest)\n' +
-'- Deep Learning (CNN)\n' +
-'- Ensemble Fusion (Weighted Average)\n\n' +
-'FEATURES ANALYZED\n' +
-'-----------------\n' +
-'- MFCC Coefficients (13)\n' +
-'- Spectral Features\n' +
-'- Mel Spectrogram Patterns\n' +
-'- Temporal Characteristics\n\n' +
-'---\n' +
-'Report generated by AuthentiVox\n';
+
+        const reportContent =
+            'AUTHENTIVOX AUDIO ANALYSIS REPORT\n' +
+            '==================================\n\n' +
+            'File: ' + (selectedFile ? selectedFile.name : 'Unknown') + '\n' +
+            'Date: ' + new Date().toLocaleString() + '\n\n' +
+            'ANALYSIS RESULT\n' +
+            '---------------\n' +
+            'Prediction: ' + (predictionText ? predictionText.textContent : 'N/A') + '\n' +
+            'Confidence: ' + (confidenceText ? confidenceText.textContent : 'N/A') + '\n\n' +
+            'DETECTION METHOD\n' +
+            '----------------\n' +
+            'Hybrid AI System combining:\n' +
+            '- Machine Learning (Random Forest)\n' +
+            '- Deep Learning (CNN)\n' +
+            '- Ensemble Fusion (Weighted Average)\n\n' +
+            'FEATURES ANALYZED\n' +
+            '-----------------\n' +
+            '- MFCC Coefficients (13)\n' +
+            '- Spectral Features\n' +
+            '- Mel Spectrogram Patterns\n' +
+            '- Temporal Characteristics\n\n' +
+            '---\n' +
+            'Report generated by AuthentiVox\n';
 
         const blob = new Blob([reportContent], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
@@ -645,29 +652,35 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
-    
+
     function shareResults() {
         const predictionText = document.getElementById('predictionText');
         const confidenceText = document.getElementById('confidenceText');
+
         if (navigator.share) {
             navigator.share({
                 title: 'AuthentiVox Analysis Results',
-                text: 'My audio was detected as ' + (predictionText ? predictionText.textContent : 'N/A') + ' with ' + (confidenceText ? confidenceText.textContent : 'N/A') + ' confidence by AuthentiVox AI.'
+                text:
+                    'My audio was detected as ' +
+                    (predictionText ? predictionText.textContent : 'N/A') +
+                    ' with ' +
+                    (confidenceText ? confidenceText.textContent : 'N/A') +
+                    ' confidence by AuthentiVox AI.'
             }).catch(err => console.log('Share failed:', err));
         } else {
             alert('Sharing not supported on this browser');
         }
     }
-    
+
     function showError(message) {
         errorText.textContent = message;
         errorMessage.style.display = 'flex';
     }
-    
+
     function hideError() {
         errorMessage.style.display = 'none';
     }
-    
+
     function formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;

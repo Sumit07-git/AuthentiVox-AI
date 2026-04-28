@@ -1,14 +1,3 @@
-"""
-Hybrid Prediction Module
-Combines ML and DL models for enhanced deepfake audio detection.
-
-FIXES vs previous version:
-- predict_ml uses classes_ index so label ordering is never assumed
-- predict_dl uses CLIP_DURATION=3 to match train_dl_model.py exactly
-- All internal probabilities are P(real); confidence = P(predicted class)
-- Null guard: both-models-failed returns None (app.py handles this)
-"""
-
 import os
 import numpy as np
 import joblib
@@ -17,8 +6,7 @@ from tensorflow import keras
 from utils.feature_extractor import AudioFeatureExtractor
 from utils.spectrogram_generator import SpectrogramGenerator
 
-# Must match the value used in train_dl_model.py
-_DL_CLIP_DURATION = 3   # seconds
+_DL_CLIP_DURATION = 3
 
 
 class HybridPredictor:
@@ -101,7 +89,6 @@ class HybridPredictor:
             print("⚠ DL model unavailable — prediction will use ML only")
 
     def predict_ml(self, audio_path):
-        """Returns (prediction, p_real). p_real = P(audio is REAL)."""
         if self.ml_model is None or self.scaler is None:
             return None, None
         try:
@@ -110,24 +97,24 @@ class HybridPredictor:
                 return None, None
 
             feat_scaled = self.scaler.transform(features.reshape(1, -1))
-            prediction  = int(self.ml_model.predict(feat_scaled)[0])
-            proba       = self.ml_model.predict_proba(feat_scaled)[0]
+            prediction = int(self.ml_model.predict(feat_scaled)[0])
+            proba = self.ml_model.predict_proba(feat_scaled)[0]
 
-            classes  = list(self.ml_model.classes_)
+            classes = list(self.ml_model.classes_)
             if 1 not in classes:
                 print(f"⚠ Unexpected classes_: {classes}")
                 return None, None
             real_idx = classes.index(1)
-            p_real   = float(proba[real_idx])
+            p_real = float(proba[real_idx])
             return prediction, p_real
 
         except Exception as e:
             print(f"❌ ML prediction error: {e}")
-            import traceback; traceback.print_exc()
+            import traceback
+            traceback.print_exc()
             return None, None
 
     def predict_dl(self, audio_path):
-        """Returns (prediction, p_real). Uses _DL_CLIP_DURATION to match training."""
         if self.dl_model is None:
             return None, None
         try:
@@ -139,29 +126,29 @@ class HybridPredictor:
             spec = self.spec_generator.prepare_for_cnn(mel)
             spec = np.expand_dims(spec, axis=0).astype(np.float32)
 
-            p_real     = float(self.dl_model.predict(spec, verbose=0)[0][0])
+            p_real = float(self.dl_model.predict(spec, verbose=0)[0][0])
             prediction = 1 if p_real > 0.5 else 0
             return prediction, p_real
 
         except Exception as e:
             print(f"❌ DL prediction error: {e}")
-            import traceback; traceback.print_exc()
+            import traceback
+            traceback.print_exc()
             return None, None
 
     def predict_hybrid(self, audio_path, method='weighted_average',
                        ml_weight=0.4, dl_weight=0.6):
-        """All internal probs are P(real). hybrid_confidence = P(predicted class)."""
         ml_pred, ml_p_real = self.predict_ml(audio_path)
         dl_pred, dl_p_real = self.predict_dl(audio_path)
 
         result = {
-            'ml_prediction':     ml_pred,
-            'ml_confidence':     ml_p_real,
-            'dl_prediction':     dl_pred,
-            'dl_confidence':     dl_p_real,
+            'ml_prediction': ml_pred,
+            'ml_confidence': ml_p_real,
+            'dl_prediction': dl_pred,
+            'dl_confidence': dl_p_real,
             'hybrid_prediction': None,
             'hybrid_confidence': None,
-            'method':            method,
+            'method': method,
         }
 
         if ml_pred is None and dl_pred is not None:
@@ -185,8 +172,8 @@ class HybridPredictor:
 
         if method == 'weighted_average':
             hybrid_p_real = ml_weight * ml_p_real + dl_weight * dl_p_real
-            hybrid_pred   = 1 if hybrid_p_real > 0.5 else 0
-            hybrid_conf   = hybrid_p_real if hybrid_pred == 1 else 1.0 - hybrid_p_real
+            hybrid_pred = 1 if hybrid_p_real > 0.5 else 0
+            hybrid_conf = hybrid_p_real if hybrid_pred == 1 else 1.0 - hybrid_p_real
             result.update(hybrid_prediction=hybrid_pred, hybrid_confidence=hybrid_conf)
 
         elif method == 'voting':
@@ -223,11 +210,11 @@ class HybridPredictor:
         def pct(v):
             return f"{v * 100:.2f}%" if v is not None else 'N/A'
         return {
-            'ml_label':               self.get_prediction_label(result['ml_prediction']),
-            'ml_confidence_percent':  pct(result['ml_confidence']),
-            'dl_label':               self.get_prediction_label(result['dl_prediction']),
-            'dl_confidence_percent':  pct(result['dl_confidence']),
-            'hybrid_label':           self.get_prediction_label(result['hybrid_prediction']),
+            'ml_label': self.get_prediction_label(result['ml_prediction']),
+            'ml_confidence_percent': pct(result['ml_confidence']),
+            'dl_label': self.get_prediction_label(result['dl_prediction']),
+            'dl_confidence_percent': pct(result['dl_confidence']),
+            'hybrid_label': self.get_prediction_label(result['hybrid_prediction']),
             'hybrid_confidence_percent': pct(result['hybrid_confidence']),
             'method': result['method'],
         }
@@ -242,7 +229,7 @@ def test_predictor():
     if not os.path.exists(test_audio):
         print(f"\n⚠ Test audio not found: {test_audio}")
         return
-    result    = predictor.predict_hybrid(test_audio)
+    result = predictor.predict_hybrid(test_audio)
     formatted = predictor.format_result(result)
     print(f"\nML   : {formatted['ml_label']} ({formatted['ml_confidence_percent']})")
     print(f"DL   : {formatted['dl_label']} ({formatted['dl_confidence_percent']})")
