@@ -1,43 +1,9 @@
-# Python
+
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
 .Python
 data
 train
-
-# Virtual Environment
 venv/
-
-# Flask
-instance/
-.webassets-cache
-
-# Uploaded files (don't commit user uploads)
 static/uploads/*
 data/uploads/*
-!static/uploads/.gitkeep
-!data/uploads/.gitkeep
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Temporary
-*.tmp
-temp/
-.gitignore
-.gitattributes
-
-# Model checkpoints (optional - if you want to exclude large checkpoints)
-# models/dl_model/checkpoints/
