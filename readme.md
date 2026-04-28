@@ -1,14 +1,3 @@
----
-title: AuthentiVox AI
-emoji: 🎙️
-colorFrom: blue
-colorTo: purple
-sdk: docker
-app_port: 7860
-pinned: false
-license: mit
----
-
 # 🎙️ AuthentiVox AI - Deepfake Audio Detection
 
 [![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/sumit0788/authentivox)
