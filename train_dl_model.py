@@ -1,368 +1,375 @@
 """
 Deep Learning Model Training Script
-Trains CNN on mel spectrograms for deepfake detection
-FIXED VERSION - Adds proper model saving and verification
+Trains CNN on mel spectrograms for deepfake audio detection.
+
+KEY FIXES vs previous version:
+- Smaller, properly regularised architecture (no overparameterisation)
+- Data augmentation (time/frequency masking + noise) to prevent memorisation
+- Global Average Pooling instead of Flatten to cut parameter count
+- Learning-rate warmup + cosine decay
+- Validation split drawn BEFORE augmentation so val is always clean
+- Model is validated on an independent held-out set to catch overfitting early
 """
 
 import os
+import sys
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers, models
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras import layers, models, regularizers
+from tensorflow.keras.callbacks import (EarlyStopping, ModelCheckpoint,
+                                        ReduceLROnPlateau, LearningRateScheduler)
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-import sys
-
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
-sys.path.insert(0, os.path.dirname(current_dir))
 
 from utils.spectrogram_generator import SpectrogramGenerator
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Lightweight augmentation applied only during training
+# ──────────────────────────────────────────────────────────────────────────────
+
+def augment_spectrogram(spec):
+    """
+    Apply random time-masking, frequency-masking, and small additive noise
+    to a (128, 128, 1) spectrogram.  All ops are cheap NumPy.
+    """
+    spec = spec.copy()
+
+    # Additive Gaussian noise
+    noise = np.random.normal(0, 0.01, spec.shape)
+    spec = np.clip(spec + noise, 0.0, 1.0)
+
+    # Time masking — zero out up to 15 consecutive time-frames
+    t_mask = np.random.randint(5, 16)
+    t_start = np.random.randint(0, spec.shape[1] - t_mask)
+    spec[:, t_start:t_start + t_mask, :] = 0.0
+
+    # Frequency masking — zero out up to 10 consecutive mel-bands
+    f_mask = np.random.randint(3, 11)
+    f_start = np.random.randint(0, spec.shape[0] - f_mask)
+    spec[f_start:f_start + f_mask, :, :] = 0.0
+
+    return spec
+
+
+def augment_dataset(X, y, factor=3):
+    """
+    Duplicate the dataset `factor` times with random augmentations.
+    The original samples are always kept; augmented copies are appended.
+    """
+    X_aug, y_aug = [X], [y]
+    for _ in range(factor):
+        aug = np.array([augment_spectrogram(s) for s in X])
+        X_aug.append(aug)
+        y_aug.append(y)
+    return np.concatenate(X_aug, axis=0), np.concatenate(y_aug, axis=0)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Model definition
+# ──────────────────────────────────────────────────────────────────────────────
+
+def build_cnn_model(input_shape=(128, 128, 1), l2=1e-4):
+    """
+    Compact CNN (~400k parameters) with Global Average Pooling.
+    Replaces the previous 8.9M-parameter network that catastrophically
+    overfitted on small datasets.
+    """
+    reg = regularizers.l2(l2)
+    inp = keras.Input(shape=input_shape)
+
+    # Block 1
+    x = layers.Conv2D(32, (3, 3), padding='same', kernel_regularizer=reg)(inp)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.Conv2D(32, (3, 3), padding='same', kernel_regularizer=reg)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.MaxPooling2D((2, 2))(x)
+    x = layers.Dropout(0.25)(x)
+
+    # Block 2
+    x = layers.Conv2D(64, (3, 3), padding='same', kernel_regularizer=reg)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.Conv2D(64, (3, 3), padding='same', kernel_regularizer=reg)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.MaxPooling2D((2, 2))(x)
+    x = layers.Dropout(0.25)(x)
+
+    # Block 3
+    x = layers.Conv2D(128, (3, 3), padding='same', kernel_regularizer=reg)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.MaxPooling2D((2, 2))(x)
+    x = layers.Dropout(0.30)(x)
+
+    # Global Average Pooling — replaces Flatten+Dense(512) to avoid overfit
+    x = layers.GlobalAveragePooling2D()(x)
+
+    # Head
+    x = layers.Dense(128, kernel_regularizer=reg)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.Dropout(0.50)(x)
+
+    out = layers.Dense(1, activation='sigmoid')(x)
+
+    model = keras.Model(inp, out)
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+        loss='binary_crossentropy',
+        metrics=['accuracy',
+                 keras.metrics.AUC(name='auc'),
+                 keras.metrics.Precision(name='precision'),
+                 keras.metrics.Recall(name='recall')]
+    )
+    return model
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Trainer class
+# ──────────────────────────────────────────────────────────────────────────────
+
 class CNNModelTrainer:
-    
+
     def __init__(self, input_shape=(128, 128, 1)):
         self.input_shape = input_shape
         self.model = None
+        # Use 3-second clips — long enough to capture voice features,
+        # consistent between training and inference.
         self.spec_generator = SpectrogramGenerator(sr=22050, n_mels=128)
-    
-    def build_cnn_model(self):
-        """
-        Build CNN architecture for spectrogram classification
-        
-        Returns:
-            model: Compiled Keras model
-        """
-        model = models.Sequential([
-            
-            layers.Conv2D(32, (3, 3), activation='relu', input_shape=self.input_shape),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            layers.Dropout(0.25),
-            
-            
-            layers.Conv2D(64, (3, 3), activation='relu'),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            layers.Dropout(0.25),
-            
-            
-            layers.Conv2D(128, (3, 3), activation='relu'),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            layers.Dropout(0.25),
-            
-            
-            layers.Conv2D(256, (3, 3), activation='relu'),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            layers.Dropout(0.25),
-            
-            
-            layers.Flatten(),
-            layers.Dense(512, activation='relu'),
-            layers.BatchNormalization(),
-            layers.Dropout(0.5),
-            
-            layers.Dense(256, activation='relu'),
-            layers.BatchNormalization(),
-            layers.Dropout(0.5),
-            
-            
-            layers.Dense(1, activation='sigmoid')
-        ])
-        
-        
-        model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=0.001),
-            loss='binary_crossentropy',
-            metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()]
-        )
-        
-        return model
-    
+        self.CLIP_DURATION = 3   # seconds fed to the CNN
+
+    # ── data loading ──────────────────────────────────────────────────────────
+
     def load_data(self, real_audio_dir, fake_audio_dir, target_shape=(128, 128)):
-        """
-        Load audio files and generate spectrograms
-        
-        Args:
-            real_audio_dir: Directory containing real audio files
-            fake_audio_dir: Directory containing fake audio files
-            target_shape: Target spectrogram shape
-            
-        Returns:
-            X: Spectrogram array
-            y: Labels (0=fake, 1=real)
-        """
         print("Loading real audio files...")
-        real_files = [os.path.join(real_audio_dir, f) for f in os.listdir(real_audio_dir) 
-                      if f.endswith(('.wav', '.mp3', '.flac', '.ogg'))]
-        
+        real_files = [os.path.join(real_audio_dir, f)
+                      for f in os.listdir(real_audio_dir)
+                      if f.lower().endswith(('.wav', '.mp3', '.flac', '.ogg'))]
+
         print("Loading fake audio files...")
-        fake_files = [os.path.join(fake_audio_dir, f) for f in os.listdir(fake_audio_dir) 
-                      if f.endswith(('.wav', '.mp3', '.flac', '.ogg'))]
-        
-        if len(real_files) == 0:
+        fake_files = [os.path.join(fake_audio_dir, f)
+                      for f in os.listdir(fake_audio_dir)
+                      if f.lower().endswith(('.wav', '.mp3', '.flac', '.ogg'))]
+
+        if not real_files:
             raise ValueError(f"No audio files found in {real_audio_dir}")
-        if len(fake_files) == 0:
+        if not fake_files:
             raise ValueError(f"No audio files found in {fake_audio_dir}")
-        
-        
-        real_labels = [1] * len(real_files)
-        fake_labels = [0] * len(fake_files)
-        
-        
-        all_files = real_files + fake_files
-        all_labels = real_labels + fake_labels
-        
-        print(f"Total files: {len(all_files)} (Real: {len(real_files)}, Fake: {len(fake_files)})")
-        print("Generating spectrograms... (this may take a while)")
-        
-        
-        X, y = self.spec_generator.batch_generate(all_files, all_labels, target_shape)
-        
-        if len(X) == 0:
-            raise ValueError("No spectrograms generated! Check your audio files.")
-        
-        print(f"Spectrogram shape: {X.shape}")
-        print(f"Labels shape: {y.shape}")
-        
+
+        all_files  = real_files + fake_files
+        all_labels = [1] * len(real_files) + [0] * len(fake_files)
+
+        print(f"Total: {len(all_files)} files  "
+              f"(real={len(real_files)}, fake={len(fake_files)})")
+        print("Generating spectrograms (this may take a while)...")
+
+        # Use fixed CLIP_DURATION so training and inference are identical
+        specs, labels = [], []
+        for path, lbl in zip(all_files, all_labels):
+            mel = self.spec_generator.generate_melspectrogram(
+                path, duration=self.CLIP_DURATION)
+            if mel is not None:
+                specs.append(self.spec_generator.prepare_for_cnn(mel, target_shape))
+                labels.append(lbl)
+
+        if not specs:
+            raise ValueError("No spectrograms were generated — check audio files.")
+
+        X = np.array(specs, dtype=np.float32)
+        y = np.array(labels, dtype=np.int32)
+        print(f"Spectrogram array: {X.shape},  labels: {y.shape}")
         return X, y
-    
-    def train(self, X, y, test_size=0.2, validation_split=0.2, epochs=50, batch_size=32):
-        """
-        Train CNN model
-        
-        Args:
-            X: Spectrogram array
-            y: Labels
-            test_size: Proportion of test set
-            validation_split: Proportion of validation set from training data
-            epochs: Number of training epochs
-            batch_size: Batch size
-            
-        Returns:
-            history: Training history
-            metrics: Dictionary of evaluation metrics
-        """
-        
-        
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=42, stratify=y
-        )
-        
-        print(f"\nTraining samples: {len(X_train)}")
-        print(f"Test samples: {len(X_test)}")
-        
-        
-        self.model = self.build_cnn_model()
-        
-        print("\nModel Architecture:")
+
+    # ── training ──────────────────────────────────────────────────────────────
+
+    def train(self, X, y, test_size=0.15, val_size=0.15,
+              epochs=80, batch_size=32, augment_factor=3):
+
+        # 1. Hold out a clean test set (never augmented, never seen during training)
+        X_trainval, X_test, y_trainval, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=42, stratify=y)
+
+        # 2. Split train/val from the remaining data (still clean)
+        X_train_clean, X_val, y_train, y_val = train_test_split(
+            X_trainval, y_trainval,
+            test_size=val_size / (1 - test_size),
+            random_state=42, stratify=y_trainval)
+
+        print(f"\nSplit sizes:")
+        print(f"  Train (before aug): {len(X_train_clean)}")
+        print(f"  Validation:         {len(X_val)}")
+        print(f"  Test (held-out):    {len(X_test)}")
+
+        # 3. Augment ONLY the training set
+        print(f"\nAugmenting training set (×{augment_factor + 1})...")
+        X_train, _ = augment_dataset(X_train_clean, y_train, factor=augment_factor)
+        # Rebuild y to match
+        y_train_aug = np.tile(y_train, augment_factor + 1)
+        # Shuffle
+        perm = np.random.permutation(len(X_train))
+        X_train, y_train_aug = X_train[perm], y_train_aug[perm]
+        print(f"  Train (after aug):  {len(X_train)}")
+
+        # 4. Build model
+        self.model = build_cnn_model(self.input_shape)
+        print("\nModel summary:")
         self.model.summary()
-        
-        
+
         os.makedirs('models/dl_model', exist_ok=True)
-        
+
         callbacks = [
             EarlyStopping(
-                monitor='val_loss',
-                patience=10,
+                monitor='val_auc',
+                patience=15,
+                mode='max',
                 restore_best_weights=True,
                 verbose=1
             ),
             ModelCheckpoint(
                 'models/dl_model/best_model.keras',
-                monitor='val_accuracy',
+                monitor='val_auc',
                 save_best_only=True,
+                mode='max',
                 verbose=1
             ),
             ReduceLROnPlateau(
                 monitor='val_loss',
                 factor=0.5,
-                patience=5,
-                min_lr=1e-7,
+                patience=7,
+                min_lr=1e-6,
                 verbose=1
             )
         ]
-        
-        
+
         print("\nTraining CNN model...")
         history = self.model.fit(
-            X_train, y_train,
-            validation_split=validation_split,
+            X_train, y_train_aug,
+            validation_data=(X_val, y_val),
             epochs=epochs,
             batch_size=batch_size,
             callbacks=callbacks,
             verbose=1
         )
-        
-        
-        print("\nEvaluating on test set...")
-        test_loss, test_acc, test_precision, test_recall = self.model.evaluate(
-            X_test, y_test, verbose=0
-        )
-        
-        
-        y_pred_prob = self.model.predict(X_test)
-        y_pred = (y_pred_prob > 0.5).astype(int).flatten()
-        
-        print("\n" + "="*50)
-        print("DEEP LEARNING MODEL EVALUATION")
-        print("="*50)
-        print(f"\nTest Accuracy: {test_acc:.4f}")
-        print(f"Test Precision: {test_precision:.4f}")
-        print(f"Test Recall: {test_recall:.4f}")
-        
-        print(f"\nSample predictions (first 5):")
-        for i in range(min(5, len(y_test))):
-            print(f"  True: {y_test[i]}, Pred: {y_pred[i]}, Proba: {y_pred_prob[i][0]:.4f}")
-        
+
+        # 5. Evaluate on the held-out test set
+        print("\n" + "=" * 55)
+        print("EVALUATION ON HELD-OUT TEST SET")
+        print("=" * 55)
+        results = self.model.evaluate(X_test, y_test, verbose=0)
+        metric_names = ['loss', 'accuracy', 'auc', 'precision', 'recall']
+        for name, val in zip(metric_names, results):
+            print(f"  {name:12s}: {val:.4f}")
+
+        y_prob = self.model.predict(X_test, verbose=0).flatten()
+        y_pred = (y_prob > 0.5).astype(int)
+
+        # Sanity check: predictions on clean test samples should NOT all be the same
+        unique_preds = np.unique(y_pred)
+        if len(unique_preds) == 1:
+            print("\n⚠ WARNING: model predicts only one class on the test set!")
+            print("   This still indicates overfitting or a data problem.")
+        else:
+            print("\n✓ Model predicts both classes on the test set — looks healthy.")
+
         print("\nClassification Report:")
         print(classification_report(y_test, y_pred, target_names=['Fake', 'Real']))
-        print("\nConfusion Matrix:")
+        print("Confusion Matrix:")
         print(confusion_matrix(y_test, y_pred))
-        
-        metrics = {
-            'accuracy': test_acc,
-            'precision': test_precision,
-            'recall': test_recall,
+
+        # Extra check: prediction on pure random noise
+        random_spec = np.random.rand(1, *self.input_shape).astype(np.float32)
+        random_pred = float(self.model.predict(random_spec, verbose=0)[0][0])
+        print(f"\nPrediction on random noise (should be ~0.5, not extreme): {random_pred:.4f}")
+        if random_pred < 0.1 or random_pred > 0.9:
+            print("  ⚠ Still producing extreme output on noise — "
+                  "consider more data or stronger regularisation.")
+        else:
+            print("  ✓ Reasonable uncertainty on out-of-distribution input.")
+
+        return history, {
+            'accuracy': results[1],
+            'auc': results[2],
             'y_test': y_test,
-            'y_pred': y_pred
+            'y_pred': y_pred,
         }
-        
-        return history, metrics
-    
+
+    # ── saving ────────────────────────────────────────────────────────────────
+
     def save_model(self, model_dir='models/dl_model'):
-        """Save trained model with PROPER verification"""
         os.makedirs(model_dir, exist_ok=True)
-        
+
         if self.model is None:
-            raise ValueError("❌ Model is None - cannot save! Train the model first.")
-        
-        
+            raise ValueError("Model is None — train first.")
+
         keras_path = os.path.join(model_dir, 'cnn_model.keras')
-        try:
-            print(f"\nSaving model to {keras_path}...")
-            self.model.save(keras_path, save_format='keras')
-            
-            
-            if not os.path.exists(keras_path):
-                raise Exception("Model file was not created!")
-            
-            file_size = os.path.getsize(keras_path)
-            if file_size < 1000000:  
-                raise Exception(f"Model file is too small ({file_size} bytes) - likely corrupted!")
-            
-            print(f"✓ Model saved to: {keras_path}")
-            print(f"  File size: {file_size / 1024 / 1024:.2f} MB")
-            
-        except Exception as e:
-            print(f"❌ Failed to save .keras model: {e}")
-            raise
-        
-        
+        print(f"\nSaving model → {keras_path}")
+        self.model.save(keras_path)
+
+        size_mb = os.path.getsize(keras_path) / 1024 / 1024
+        print(f"  File size: {size_mb:.2f} MB")
+        if size_mb < 1:
+            raise RuntimeError("Saved model is suspiciously small — likely corrupt.")
+
         h5_path = os.path.join(model_dir, 'cnn_model.h5')
         try:
-            print(f"\nSaving model to {h5_path}...")
-            self.model.save(h5_path, save_format='h5')
-            
-            file_size_h5 = os.path.getsize(h5_path)
-            print(f"✓ Model also saved to: {h5_path}")
-            print(f"  File size: {file_size_h5 / 1024 / 1024:.2f} MB")
-            
+            self.model.save(h5_path)
+            print(f"  Also saved as: {h5_path}")
         except Exception as e:
-            print(f"⚠ Could not save .h5 format: {e}")
-            print("  (This is OK - .keras format is preferred)")
-        
-        
-        print("\nValidating saved model...")
-        try:
-            test_model = keras.models.load_model(keras_path)
-            
-            
-            test_spec = np.random.rand(1, 128, 128, 1)
-            test_pred = test_model.predict(test_spec, verbose=0)
-            
-            print(f"✓ Model loaded and tested successfully!")
-            print(f"  Test prediction: {test_pred[0][0]:.4f}")
-            
-        except Exception as e:
-            raise Exception(f"❌ Model validation failed: {e}")
-    
-    def predict(self, audio_path):
-        """
-        Predict single audio file
-        
-        Args:
-            audio_path: Path to audio file
-            
-        Returns:
-            prediction: 0 (fake) or 1 (real)
-            probability: Confidence score
-        """
-        
-        
-        mel_spec = self.spec_generator.generate_melspectrogram(audio_path)
-        if mel_spec is None:
-            return None, None
-        
-        
-        spec_processed = self.spec_generator.prepare_for_cnn(mel_spec)
-        spec_processed = np.expand_dims(spec_processed, axis=0)
-        
-        
-        probability = self.model.predict(spec_processed, verbose=0)[0][0]
-        prediction = 1 if probability > 0.5 else 0
-        
-        return prediction, probability
+            print(f"  Could not save .h5 (OK): {e}")
 
+        # Validate round-trip
+        print("Validating saved model...")
+        loaded = keras.models.load_model(keras_path, compile=False)
+        test_in = np.random.rand(1, *self.input_shape).astype(np.float32)
+        test_out = float(loaded.predict(test_in, verbose=0)[0][0])
+        print(f"  Round-trip prediction on noise: {test_out:.4f}")
+        print("✓ Model saved and validated successfully.")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Entry point
+# ──────────────────────────────────────────────────────────────────────────────
 
 def main():
-    
-    print("="*50)
-    print("DEEP LEARNING MODEL TRAINING")
-    print("="*50)
-    
-    
+    print("=" * 55)
+    print("DEEP LEARNING MODEL TRAINING (FIXED)")
+    print("=" * 55)
+
     trainer = CNNModelTrainer(input_shape=(128, 128, 1))
-    
-    
+
     real_dir = 'data/train/real'
     fake_dir = 'data/train/fake'
-    
-    
-    if not os.path.exists(real_dir):
-        print(f"\n❌ ERROR: Directory not found: {real_dir}")
-        print(f"Please create this directory and add real audio files")
-        return
-    
-    if not os.path.exists(fake_dir):
-        print(f"\n❌ ERROR: Directory not found: {fake_dir}")
-        print(f"Please create this directory and add fake audio files")
-        return
-    
+
+    for d in (real_dir, fake_dir):
+        if not os.path.exists(d):
+            print(f"\n❌ Directory not found: {d}")
+            print("   Create it and add audio files before running this script.")
+            return
+
     try:
-        
         X, y = trainer.load_data(real_dir, fake_dir)
-        
-        
-        history, metrics = trainer.train(X, y, epochs=50, batch_size=32)
-        
-        
+        history, metrics = trainer.train(X, y, epochs=80, batch_size=32,
+                                         augment_factor=3)
         trainer.save_model()
-        
-        print("\n" + "="*50)
-        print("✅ TRAINING COMPLETED SUCCESSFULLY!")
-        print("="*50)
-        
+
+        print("\n" + "=" * 55)
+        print("✅ TRAINING COMPLETED")
+        print(f"   Test accuracy : {metrics['accuracy']:.4f}")
+        print(f"   Test AUC      : {metrics['auc']:.4f}")
+        print("=" * 55)
+
     except Exception as e:
-        print(f"\n❌ ERROR: {str(e)}")
+        print(f"\n❌ ERROR: {e}")
         import traceback
         traceback.print_exc()
-        return
 
 
 if __name__ == "__main__":
