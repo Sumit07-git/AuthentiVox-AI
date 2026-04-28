@@ -142,11 +142,11 @@ Visit `http://localhost:5000` in your browser.
 
 ## 👨‍💻 Author
 
-**Sumit Kumar**
+**Sumit Samal**
 
 - GitHub: [@Sumit07-git](https://github.com/Sumit07-git)
-- LinkedIn: [Connect with me](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
+- LinkedIn: [Connect with me](www.linkedin.com/in/sumit-samal-a66a9528b)
+- Email: sumitsamal08@gmail.com
 
 ## 📄 License
 
