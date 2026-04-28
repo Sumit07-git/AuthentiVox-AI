@@ -6,4 +6,5 @@ train
 venv/
 static/uploads/*
 data/uploads/*
+models/
 
