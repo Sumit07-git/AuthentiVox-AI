@@ -1,11 +1,16 @@
 """
 Hybrid Predictor — Fixed Version
 Fixes:
-  1. Correct model filename (rf_pipeline.pkl, not rf_classifier.pkl)
+  1. Correct model filename (rf_pipeline.pkl)
   2. No double-scaling (pipeline already has scaler inside)
   3. Robust classes_ index lookup
-  4. TYPO FIX: 'dp_real' → 'dl_p_real' in max_confidence branch (NameError crash)
-  5. Sanity-check logging for debugging
+  4. TYPO FIX: 'dp_real' → 'dl_p_real' in max_confidence branch
+  5. ✅ NEW: DL clip duration increased 3s → 10s
+     - 3s was too short for real recorded speech; silence at start caused flat
+       spectrogram → CNN could not distinguish real from fake
+  6. ✅ NEW: Audio normalization before DL spectrogram generation
+     - Microphone recordings have different loudness than ASVspoof studio audio
+     - Peak normalization ensures consistent spectrogram intensity
 """
 
 import os
@@ -16,7 +21,10 @@ from tensorflow import keras
 from utils.feature_extractor import AudioFeatureExtractor
 from utils.spectrogram_generator import SpectrogramGenerator
 
-_DL_CLIP_DURATION = 3
+# ✅ FIX: increased from 3 → 10 seconds
+# 3 seconds was too short — if the speaker starts talking after 1-2s of silence,
+# the CNN only sees a flat spectrogram for half the input window.
+_DL_CLIP_DURATION = 10
 
 
 class HybridPredictor:
@@ -52,10 +60,9 @@ class HybridPredictor:
                         self.scaler = scaler_step
                         print(f"  → scaler n_features_in_: {scaler_step.n_features_in_}")
                 else:
-                    print("  ⚠ Loaded object is not a Pipeline — trying legacy path")
+                    print("  ⚠ Loaded object is not a Pipeline")
             else:
                 print(f"⚠ ML model not found: {ml_model_path}")
-                # Fallback to legacy alias
                 legacy_path = 'models/ml_model/rf_classifier.pkl'
                 if os.path.exists(legacy_path):
                     self.ml_model = joblib.load(legacy_path)
@@ -120,6 +127,21 @@ class HybridPredictor:
     def _is_pipeline(self):
         return hasattr(self.ml_model, 'named_steps')
 
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _normalize_audio(y):
+        """
+        ✅ NEW: Peak-normalize audio to [-1, 1] range.
+        Microphone recordings are often much quieter than ASVspoof studio audio.
+        Without normalization, the spectrogram is darker/quieter than what the CNN
+        was trained on → the CNN interprets the recording as anomalous (fake).
+        """
+        peak = np.abs(y).max()
+        if peak < 1e-8:
+            return y  # silent — return as-is, feature extractor will reject it
+        return y / peak
+
+    # ------------------------------------------------------------------
     def predict_ml(self, audio_path):
         if self.ml_model is None:
             return None, None
@@ -131,13 +153,11 @@ class HybridPredictor:
             feat_input = features.reshape(1, -1)
 
             if self._is_pipeline():
-                # ✅ Pipeline scales internally — do NOT scale again
                 prediction = int(self.ml_model.predict(feat_input)[0])
                 proba      = self.ml_model.predict_proba(feat_input)[0]
                 clf        = self.ml_model.named_steps['classifier']
                 classes    = list(clf.classes_)
             else:
-                # Legacy bare classifier
                 if self.scaler is not None:
                     feat_input = self.scaler.transform(feat_input)
                 prediction = int(self.ml_model.predict(feat_input)[0])
@@ -163,16 +183,33 @@ class HybridPredictor:
         if self.dl_model is None:
             return None, None
         try:
-            mel = self.spec_generator.generate_melspectrogram(audio_path, duration=_DL_CLIP_DURATION)
-            if mel is None:
+            import librosa
+
+            # ✅ FIX: Load audio with longer duration (10s instead of 3s)
+            # and apply peak normalization to match training distribution
+            y, sr = librosa.load(audio_path, sr=22050, duration=_DL_CLIP_DURATION)
+
+            # ✅ NEW: normalize loudness before generating spectrogram
+            y = self._normalize_audio(y)
+
+            # Check if audio has enough content (not all silence)
+            rms = float(np.sqrt(np.mean(y ** 2)))
+            if rms < 1e-5:
+                print(f"  DL → skipping: near-silent audio (RMS={rms:.2e})")
                 return None, None
 
-            spec = self.spec_generator.prepare_for_cnn(mel)
+            # Generate spectrogram from normalized audio
+            mel_spec    = librosa.feature.melspectrogram(
+                y=y, sr=sr, n_mels=128, n_fft=2048, hop_length=512
+            )
+            mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+
+            spec = self.spec_generator.prepare_for_cnn(mel_spec_db)
             spec = np.expand_dims(spec, axis=0).astype(np.float32)
 
             p_real     = float(self.dl_model.predict(spec, verbose=0)[0][0])
             prediction = 1 if p_real > 0.5 else 0
-            print(f"  DL → pred={prediction} p_real={p_real:.4f}")
+            print(f"  DL → pred={prediction} p_real={p_real:.4f} (clip={_DL_CLIP_DURATION}s, rms={rms:.4f})")
             return prediction, p_real
 
         except Exception as e:
@@ -193,13 +230,13 @@ class HybridPredictor:
         dl_pred, dl_p_real = self.predict_dl(audio_path)
 
         result = {
-            'ml_prediction':    ml_pred,
-            'ml_confidence':    ml_p_real,
-            'dl_prediction':    dl_pred,
-            'dl_confidence':    dl_p_real,
+            'ml_prediction':     ml_pred,
+            'ml_confidence':     ml_p_real,
+            'dl_prediction':     dl_pred,
+            'dl_confidence':     dl_p_real,
             'hybrid_prediction': None,
             'hybrid_confidence': None,
-            'method':           method,
+            'method':            method,
         }
 
         if ml_pred is None and dl_pred is not None:
@@ -245,8 +282,7 @@ class HybridPredictor:
 
         elif method == 'max_confidence':
             ml_c = ml_p_real if ml_pred == 1 else 1.0 - ml_p_real
-            # ✅ FIX: was 'dp_real' (NameError) — corrected to 'dl_p_real'
-            dl_c = dl_p_real if dl_pred == 1 else 1.0 - dl_p_real
+            dl_c = dl_p_real if dl_pred == 1 else 1.0 - dl_p_real  # ✅ was typo 'dp_real'
             if ml_c >= dl_c:
                 result.update(hybrid_prediction=ml_pred, hybrid_confidence=ml_c)
             else:

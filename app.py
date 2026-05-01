@@ -37,7 +37,6 @@ def initialize_models():
     sys.stdout.flush()
 
     try:
-        # ✅ FIX: check rf_pipeline.pkl (primary) then rf_classifier.pkl (alias fallback)
         ml_model_primary = 'models/ml_model/rf_pipeline.pkl'
         ml_model_alias   = 'models/ml_model/rf_classifier.pkl'
         dl_model_keras   = 'models/dl_model/cnn_model.keras'
@@ -124,6 +123,23 @@ def clear_upload_folder():
         logger.error(f"Clear folder error: {e}")
 
 
+def _prediction_confidence(p_real, prediction):
+    """
+    Convert raw p_real probability into 'confidence in the prediction' (0-100%).
+    ✅ FIX for DL showing 0%:
+       For FAKE prediction (pred=0): confidence = (1 - p_real) * 100
+       For REAL prediction (pred=1): confidence = p_real * 100
+    This ensures FAKE audio always shows high confidence when p_real is low,
+    instead of showing near-0% because p_real ≈ 0.
+    """
+    if p_real is None:
+        return None
+    if prediction == 1:
+        return round(p_real * 100, 2)
+    else:
+        return round((1.0 - p_real) * 100, 2)
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -166,7 +182,6 @@ def upload_file():
         logger.info("Upload request received")
 
         if predictor is None:
-            logger.error("Models not loaded")
             return jsonify({
                 'success': False,
                 'error':   'AI models not available. Server may be starting up. Please try again.',
@@ -240,7 +255,6 @@ def upload_file():
         result = predictor.predict_hybrid(filepath, method='weighted_average')
         logger.info(f"Raw result: {result}")
 
-        # ✅ FIX: Guard both hybrid_prediction AND hybrid_confidence for None
         if result['hybrid_prediction'] is None or result['hybrid_confidence'] is None:
             logger.error("Both models failed to produce a prediction")
             return jsonify({
@@ -251,6 +265,13 @@ def upload_file():
         is_fake          = (result['hybrid_prediction'] == 0)
         confidence_score = round(result['hybrid_confidence'] * 100, 2)
 
+        # ✅ FIX: Convert p_real → prediction-confidence for each model
+        # So FAKE audio with p_real=0.02 shows DL confidence = 98%, not 2%
+        ml_pred   = result['ml_prediction']
+        dl_pred   = result['dl_prediction']
+        ml_conf_pct = _prediction_confidence(result['ml_confidence'], ml_pred)
+        dl_conf_pct = _prediction_confidence(result['dl_confidence'], dl_pred)
+
         response = {
             'success':          True,
             'filename':         filename,
@@ -260,17 +281,17 @@ def upload_file():
             'confidence_score': confidence_score,
             'spectrogram_path': spectrogram_path,
             'debug': {
-                'ml_prediction': result['ml_prediction'],
-                'ml_confidence': round(result['ml_confidence'] * 100, 2) if result['ml_confidence'] is not None else None,
-                'dl_prediction': result['dl_prediction'],
-                'dl_confidence': round(result['dl_confidence'] * 100, 2) if result['dl_confidence'] is not None else None,
-                'method':        result['method'],
+                'ml_prediction':  ml_pred,
+                'ml_confidence':  ml_conf_pct,   # now = confidence-in-prediction
+                'dl_prediction':  dl_pred,
+                'dl_confidence':  dl_conf_pct,   # now = confidence-in-prediction
+                'method':         result['method'],
             },
         }
 
         logger.info(
             f"SUCCESS: {response['prediction']} ({response['confidence_score']}%) "
-            f"[ML={result['ml_prediction']}, DL={result['dl_prediction']}, method={result['method']}]"
+            f"[ML={ml_pred}@{ml_conf_pct}%, DL={dl_pred}@{dl_conf_pct}%, method={result['method']}]"
         )
         return jsonify(response), 200
 
