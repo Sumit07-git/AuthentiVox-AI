@@ -43,11 +43,8 @@ document.addEventListener('DOMContentLoaded', function () {
         e.preventDefault();
         e.stopPropagation();
         uploadArea.classList.remove('dragover');
-
         const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileSelect(files[0]);
-        }
+        if (files.length > 0) handleFileSelect(files[0]);
     });
 
     uploadArea.addEventListener('click', function (e) {
@@ -66,33 +63,22 @@ document.addEventListener('DOMContentLoaded', function () {
     analyzeBtn.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        if (selectedFile) {
-            analyzeAudio();
-        }
+        if (selectedFile) analyzeAudio();
     });
 
     const analyzeAnotherBtn = document.getElementById('analyzeAnotherBtn');
-    if (analyzeAnotherBtn) {
-        analyzeAnotherBtn.addEventListener('click', resetToUpload);
-    }
+    if (analyzeAnotherBtn) analyzeAnotherBtn.addEventListener('click', resetToUpload);
 
     const downloadReportBtn = document.getElementById('downloadReportBtn');
-    if (downloadReportBtn) {
-        downloadReportBtn.addEventListener('click', downloadReport);
-    }
+    if (downloadReportBtn) downloadReportBtn.addEventListener('click', downloadReport);
 
     const viewHistoryBtn = document.getElementById('viewHistoryBtn');
-    if (viewHistoryBtn) {
-        viewHistoryBtn.addEventListener('click', () => {
-            window.location.href = '/history';
-        });
-    }
+    if (viewHistoryBtn) viewHistoryBtn.addEventListener('click', () => { window.location.href = '/history'; });
 
     const shareResultsBtn = document.getElementById('shareResultsBtn');
-    if (shareResultsBtn) {
-        shareResultsBtn.addEventListener('click', shareResults);
-    }
+    if (shareResultsBtn) shareResultsBtn.addEventListener('click', shareResults);
 
+    // ----------------------------------------------------------------
     function handleFileSelect(file) {
         if (!file) return;
 
@@ -104,7 +90,6 @@ document.addEventListener('DOMContentLoaded', function () {
             showError('Invalid file format. Please upload WAV, MP3, FLAC, or OGG files.');
             return;
         }
-
         if (file.size > 16 * 1024 * 1024) {
             showError('File too large. Maximum size is 16MB.');
             return;
@@ -113,9 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
         selectedFile = file;
         fileName.textContent = file.name;
         fileSize.textContent = formatFileSize(file.size);
-
-        const fileURL = URL.createObjectURL(file);
-        audioPlayer.src = fileURL;
+        audioPlayer.src = URL.createObjectURL(file);
         uploadArea.style.display = 'none';
         fileInfo.style.display = 'block';
         hideError();
@@ -132,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
         hideError();
     }
 
+    // ----------------------------------------------------------------
     async function analyzeAudio() {
         if (!selectedFile || isAnalyzing) return;
 
@@ -148,34 +132,21 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const [response] = await Promise.all([
                 fetch('/api/upload', { method: 'POST', body: formData }),
-                new Promise(resolve => setTimeout(resolve, 2200))
+                new Promise(resolve => setTimeout(resolve, 2200)),
             ]);
 
             if (!response.ok) {
                 let errorMsg = 'Server error (' + response.status + ')';
-
                 try {
                     const errorData = await response.json();
                     errorMsg = errorData.error || errorMsg;
-                } catch (parseError) {
-                    const text = await response.text().catch(() => '');
-                    console.error('Server returned ' + response.status + ':', text.substring(0, 200));
-
-                    if (response.status === 502) {
-                        errorMsg = 'Server is temporarily unavailable. Please try again in a moment.';
-                    } else if (response.status === 413) {
-                        errorMsg = 'File is too large for the server to process.';
-                    } else if (response.status === 504) {
-                        errorMsg = 'Analysis timed out. Try a shorter audio file.';
-                    } else if (response.status === 500) {
-                        errorMsg = 'Internal server error. Please try again.';
-                    } else if (response.status === 503) {
-                        errorMsg = 'Service unavailable. The server may be starting up. Please wait and try again.';
-                    } else if (response.status === 408) {
-                        errorMsg = 'Request timed out. Please try again with a smaller file.';
-                    }
+                } catch (_) {
+                    if      (response.status === 502) errorMsg = 'Server is temporarily unavailable. Please try again.';
+                    else if (response.status === 413) errorMsg = 'File is too large for the server to process.';
+                    else if (response.status === 504) errorMsg = 'Analysis timed out. Try a shorter audio file.';
+                    else if (response.status === 503) errorMsg = 'Service unavailable. Please wait and try again.';
+                    else if (response.status === 500) errorMsg = 'Internal server error. Please try again.';
                 }
-
                 showError(errorMsg);
                 loadingState.style.display = 'none';
                 fileInfo.style.display = 'block';
@@ -186,8 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let data;
             try {
                 data = await response.json();
-            } catch (parseError) {
-                console.error('Failed to parse server response:', parseError);
+            } catch (_) {
                 showError('Invalid response from server. Please try again.');
                 loadingState.style.display = 'none';
                 fileInfo.style.display = 'block';
@@ -204,15 +174,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 isAnalyzing = false;
             }
         } catch (error) {
-            console.error('Error:', error);
-
             let errorMsg = 'Network error. Please check your connection and try again.';
-            if (error.name === 'AbortError') {
-                errorMsg = 'Request was cancelled. Please try again.';
-            } else if (error.message && error.message.includes('Failed to fetch')) {
+            if (error.name === 'AbortError') errorMsg = 'Request was cancelled. Please try again.';
+            else if (error.message && error.message.includes('Failed to fetch'))
                 errorMsg = 'Cannot reach the server. Please check if the server is running.';
-            }
-
             showError(errorMsg);
             loadingState.style.display = 'none';
             fileInfo.style.display = 'block';
@@ -220,18 +185,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // ----------------------------------------------------------------
     function simulateProgress() {
         const progressFill = document.getElementById('progressFill');
         const steps = document.querySelectorAll('.loading-steps .step');
 
         progressFill.style.transition = 'none';
         progressFill.style.width = '0%';
-
         steps.forEach(step => {
             step.classList.remove('active', 'complete');
             step.querySelector('i').className = 'fas fa-circle';
         });
-
         void progressFill.offsetWidth;
         progressFill.style.transition = '';
 
@@ -260,91 +224,63 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 100);
     }
 
+    // ----------------------------------------------------------------
     function saveToHistory(data) {
         try {
             let history = JSON.parse(localStorage.getItem('analysisHistory') || '[]');
-            const historyItem = {
-                id: Date.now().toString(),
-                filename: selectedFile ? selectedFile.name : 'Unknown',
-                filesize: selectedFile ? selectedFile.size : 0,
-                is_fake: data.is_fake,
+            history.unshift({
+                id:         Date.now().toString(),
+                filename:   selectedFile ? selectedFile.name : 'Unknown',
+                filesize:   selectedFile ? selectedFile.size : 0,
+                is_fake:    data.is_fake,
                 confidence: data.confidence_score,
-                timestamp: new Date().toISOString()
-            };
-
-            history.unshift(historyItem);
-            if (history.length > 100) {
-                history = history.slice(0, 100);
-            }
+                timestamp:  new Date().toISOString(),
+            });
+            if (history.length > 100) history = history.slice(0, 100);
             localStorage.setItem('analysisHistory', JSON.stringify(history));
-        } catch (error) {
-            console.error('Error saving to history:', error);
+        } catch (e) {
+            console.error('Error saving to history:', e);
         }
     }
 
+    // ----------------------------------------------------------------
     function displayResults(data) {
         const processingTime = ((Date.now() - analysisStartTime) / 1000).toFixed(1);
-
         saveToHistory(data);
 
-        if (loadingState) loadingState.style.display = 'none';
-        if (uploadSection) uploadSection.style.display = 'none';
+        if (loadingState)   loadingState.style.display   = 'none';
+        if (uploadSection)  uploadSection.style.display  = 'none';
 
         setTimeout(() => {
-            if (resultsHero) {
-                resultsHero.style.display = 'block';
-                updateHeroSection(data);
-            }
-
+            if (resultsHero) { resultsHero.style.display = 'block'; updateHeroSection(data); }
             setTimeout(() => {
-                if (resultsDashboard) {
-                    resultsDashboard.style.display = 'block';
-                    updateDashboardSection(data, processingTime);
-                }
+                if (resultsDashboard) { resultsDashboard.style.display = 'block'; updateDashboardSection(data, processingTime); }
             }, 200);
-
             setTimeout(() => {
-                if (audioAnalysisSection) {
-                    audioAnalysisSection.style.display = 'block';
-                    updateAudioAnalysisSection(data);
-                }
+                if (audioAnalysisSection) { audioAnalysisSection.style.display = 'block'; updateAudioAnalysisSection(data); }
             }, 400);
-
             if (data.spectrogram_path && spectrogramFullSection) {
-                setTimeout(() => {
-                    spectrogramFullSection.style.display = 'block';
-                    updateSpectrogramSection(data);
-                }, 600);
+                setTimeout(() => { spectrogramFullSection.style.display = 'block'; updateSpectrogramSection(data); }, 600);
             }
-
             setTimeout(() => {
-                if (technicalSection) {
-                    technicalSection.style.display = 'block';
-                    updateTechnicalSection(data);
-                }
+                if (technicalSection) { technicalSection.style.display = 'block'; updateTechnicalSection(data); }
             }, 800);
-
             setTimeout(() => {
-                if (actionsSection) {
-                    actionsSection.style.display = 'block';
-                }
+                if (actionsSection) actionsSection.style.display = 'block';
             }, 1000);
         }, 100);
 
         isAnalyzing = false;
     }
 
+    // ----------------------------------------------------------------
     function updateHeroSection(data) {
-        const resultsHero = document.getElementById('resultsHero');
-        const heroBadge = document.getElementById('heroBadge');
-        const heroLabel = document.getElementById('heroLabel');
-        const heroTitle = document.getElementById('heroTitle');
+        const heroBadge      = document.getElementById('heroBadge');
+        const heroLabel      = document.getElementById('heroLabel');
+        const heroTitle      = document.getElementById('heroTitle');
         const heroConfidence = document.getElementById('heroConfidence');
 
-        if (!heroBadge || !heroLabel || !heroConfidence || !heroTitle) {
-            console.warn('Hero section elements not found');
-            return;
-        }
+        if (!heroBadge || !heroLabel || !heroConfidence || !heroTitle) return;
 
         resultsHero.classList.remove('real', 'fake');
         heroBadge.classList.remove('real', 'fake');
@@ -362,19 +298,17 @@ document.addEventListener('DOMContentLoaded', function () {
             heroTitle.textContent = 'Real Audio Detected';
             heroBadge.querySelector('i').className = 'fas fa-shield-alt';
         }
-
         heroConfidence.textContent = data.confidence_score + '%';
     }
 
+    // ----------------------------------------------------------------
     function updateDashboardSection(data, processingTime) {
-        const predictionText = document.getElementById('predictionText');
-        const confidenceText = document.getElementById('confidenceText');
+        const predictionText  = document.getElementById('predictionText');
+        const confidenceText  = document.getElementById('confidenceText');
         const processingTimeEl = document.getElementById('processingTime');
 
-        if (predictionText) {
-            predictionText.textContent = data.is_fake ? 'SYNTHETIC' : 'AUTHENTIC';
-        }
-        if (confidenceText) confidenceText.textContent = data.confidence_score + '%';
+        if (predictionText)   predictionText.textContent  = data.is_fake ? 'SYNTHETIC' : 'AUTHENTIC';
+        if (confidenceText)   confidenceText.textContent  = data.confidence_score + '%';
         if (processingTimeEl) processingTimeEl.textContent = processingTime + 's';
 
         const predictionStatIcon = document.querySelector('#resultsDashboard .stat-card:first-child .stat-icon');
@@ -382,11 +316,11 @@ document.addEventListener('DOMContentLoaded', function () {
             predictionStatIcon.classList.remove('real', 'fake');
             predictionStatIcon.classList.add(data.is_fake ? 'fake' : 'real');
             predictionStatIcon.querySelector('i').className = data.is_fake
-                ? 'fas fa-times-circle'
-                : 'fas fa-check-circle';
+                ? 'fas fa-times-circle' : 'fas fa-check-circle';
         }
 
-        const circleProgress = document.getElementById('circleProgress');
+        // Confidence circle
+        const circleProgress   = document.getElementById('circleProgress');
         const circlePercentage = document.getElementById('circlePercentage');
 
         if (circleProgress && circlePercentage) {
@@ -396,42 +330,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (svg) {
                 let gradient = svg.querySelector('#gradient');
-
                 if (!gradient) {
                     const defs = svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-                    if (!svg.querySelector('defs')) {
-                        svg.insertBefore(defs, svg.firstChild);
-                    }
+                    if (!svg.querySelector('defs')) svg.insertBefore(defs, svg.firstChild);
                     gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
                     gradient.setAttribute('id', 'gradient');
-                    gradient.setAttribute('x1', '0%');
-                    gradient.setAttribute('y1', '0%');
-                    gradient.setAttribute('x2', '100%');
-                    gradient.setAttribute('y2', '100%');
+                    gradient.setAttribute('x1', '0%'); gradient.setAttribute('y1', '0%');
+                    gradient.setAttribute('x2', '100%'); gradient.setAttribute('y2', '100%');
                     defs.appendChild(gradient);
                 }
-
                 gradient.innerHTML = '';
-
-                if (data.is_fake) {
-                    const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    stop1.setAttribute('offset', '0%');
-                    stop1.setAttribute('style', 'stop-color:#ef4444;stop-opacity:1');
-                    const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    stop2.setAttribute('offset', '100%');
-                    stop2.setAttribute('style', 'stop-color:#dc2626;stop-opacity:1');
-                    gradient.appendChild(stop1);
-                    gradient.appendChild(stop2);
-                } else {
-                    const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    stop1.setAttribute('offset', '0%');
-                    stop1.setAttribute('style', 'stop-color:#10b981;stop-opacity:1');
-                    const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    stop2.setAttribute('offset', '100%');
-                    stop2.setAttribute('style', 'stop-color:#059669;stop-opacity:1');
-                    gradient.appendChild(stop1);
-                    gradient.appendChild(stop2);
-                }
+                const colors = data.is_fake
+                    ? ['#ef4444', '#dc2626']
+                    : ['#10b981', '#059669'];
+                colors.forEach((c, i) => {
+                    const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                    stop.setAttribute('offset', i === 0 ? '0%' : '100%');
+                    stop.setAttribute('style', `stop-color:${c};stop-opacity:1`);
+                    gradient.appendChild(stop);
+                });
             }
 
             setTimeout(() => {
@@ -442,38 +359,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const confidenceDescription = document.getElementById('confidenceDescription');
         if (confidenceDescription) {
-            if (data.confidence_score >= 90) {
-                confidenceDescription.textContent = 'The AI model is highly confident in this prediction. The audio shows strong indicators.';
-            } else if (data.confidence_score >= 70) {
-                confidenceDescription.textContent = 'The AI model has good confidence in this prediction. Most indicators align with the result.';
-            } else {
-                confidenceDescription.textContent = 'The AI model has moderate confidence. Some indicators are ambiguous.';
-            }
+            if      (data.confidence_score >= 90) confidenceDescription.textContent = 'The AI model is highly confident in this prediction. The audio shows strong indicators.';
+            else if (data.confidence_score >= 70) confidenceDescription.textContent = 'The AI model has good confidence in this prediction. Most indicators align with the result.';
+            else                                   confidenceDescription.textContent = 'The AI model has moderate confidence. Some indicators are ambiguous.';
         }
 
+        // ✅ FIX: Use REAL ML/DL confidence values from backend debug field
         setTimeout(() => {
-            const mlFill = document.getElementById('mlFill');
+            const mlFill  = document.getElementById('mlFill');
             const mlValue = document.getElementById('mlValue');
-            const dlFill = document.getElementById('dlFill');
+            const dlFill  = document.getElementById('dlFill');
             const dlValue = document.getElementById('dlValue');
 
-            if (mlFill && mlValue) {
-                const mlConfidence = Math.max(60, data.confidence_score - Math.random() * 10);
-                mlFill.style.width = mlConfidence + '%';
-                mlValue.textContent = mlConfidence.toFixed(1) + '%';
-            }
+            // data.debug.ml_confidence and dl_confidence are already in % (0-100) from backend
+            const mlConf = (data.debug && data.debug.ml_confidence != null)
+                ? data.debug.ml_confidence
+                : null;
+            const dlConf = (data.debug && data.debug.dl_confidence != null)
+                ? data.debug.dl_confidence
+                : null;
 
+            if (mlFill && mlValue) {
+                if (mlConf !== null) {
+                    mlFill.style.width  = mlConf + '%';
+                    mlValue.textContent = mlConf.toFixed(1) + '%';
+                } else {
+                    mlFill.style.width  = '0%';
+                    mlValue.textContent = 'N/A';
+                }
+            }
             if (dlFill && dlValue) {
-                const dlConfidence = Math.min(98, data.confidence_score + Math.random() * 10);
-                dlFill.style.width = dlConfidence + '%';
-                dlValue.textContent = dlConfidence.toFixed(1) + '%';
+                if (dlConf !== null) {
+                    dlFill.style.width  = dlConf + '%';
+                    dlValue.textContent = dlConf.toFixed(1) + '%';
+                } else {
+                    dlFill.style.width  = '0%';
+                    dlValue.textContent = 'N/A';
+                }
             }
         }, 800);
     }
 
+    // ----------------------------------------------------------------
     function updateAudioAnalysisSection(data) {
-        const analysisFileName = document.getElementById('analysisFileName');
-        const analysisFileSize = document.getElementById('analysisFileSize');
+        const analysisFileName  = document.getElementById('analysisFileName');
+        const analysisFileSize  = document.getElementById('analysisFileSize');
         const resultsAudioPlayer = document.getElementById('resultsAudioPlayer');
 
         if (analysisFileName) analysisFileName.textContent = selectedFile.name;
@@ -482,66 +412,49 @@ document.addEventListener('DOMContentLoaded', function () {
         if (resultsAudioPlayer) {
             resultsAudioPlayer.src = URL.createObjectURL(selectedFile);
             resultsAudioPlayer.addEventListener('loadedmetadata', function () {
-                const duration = Math.floor(resultsAudioPlayer.duration);
-                const minutes = Math.floor(duration / 60);
-                const seconds = duration % 60;
-                const audioDuration = document.getElementById('audioDuration');
-                if (audioDuration) {
-                    audioDuration.textContent = minutes + ':' + seconds.toString().padStart(2, '0');
-                }
+                const dur     = Math.floor(resultsAudioPlayer.duration);
+                const minutes = Math.floor(dur / 60);
+                const seconds = dur % 60;
+                const el = document.getElementById('audioDuration');
+                if (el) el.textContent = minutes + ':' + seconds.toString().padStart(2, '0');
             });
         }
 
-        const indicators = document.querySelectorAll('.indicator-item');
-        indicators.forEach((indicator) => {
-            const badge = indicator.querySelector('.indicator-badge');
-            if (badge) {
-                badge.classList.remove('fail');
-                badge.classList.add('pass');
-                badge.textContent = '✓';
-            }
-        });
-
         const indicatorDescriptions = [
-            { real: 'Natural voice characteristics detected', fake: 'Unnatural frequency patterns found' },
-            { real: 'Consistent energy distribution', fake: 'Irregular energy distribution detected' },
-            { real: 'No synthetic markers found', fake: 'Synthetic markers detected' },
-            { real: 'Authentic vocal patterns', fake: 'Unnatural vocal patterns' }
+            { real: 'Natural voice characteristics detected',  fake: 'Unnatural frequency patterns found'       },
+            { real: 'Consistent energy distribution',          fake: 'Irregular energy distribution detected'   },
+            { real: 'No synthetic markers found',              fake: 'Synthetic markers detected'               },
+            { real: 'Authentic vocal patterns',                fake: 'Unnatural vocal patterns'                 },
         ];
 
-        indicators.forEach((indicator, index) => {
-            const badge = indicator.querySelector('.indicator-badge');
+        document.querySelectorAll('.indicator-item').forEach((indicator, index) => {
+            const badge   = indicator.querySelector('.indicator-badge');
             const content = indicator.querySelector('.indicator-content p');
             if (!badge || !content || !indicatorDescriptions[index]) return;
 
             if (data.is_fake) {
-                badge.classList.remove('pass');
-                badge.classList.add('fail');
-                badge.textContent = '✗';
+                badge.classList.remove('pass'); badge.classList.add('fail'); badge.textContent = '✗';
                 content.textContent = indicatorDescriptions[index].fake;
             } else {
-                badge.classList.remove('fail');
-                badge.classList.add('pass');
-                badge.textContent = '✓';
+                badge.classList.remove('fail'); badge.classList.add('pass'); badge.textContent = '✓';
                 content.textContent = indicatorDescriptions[index].real;
             }
         });
     }
 
+    // ----------------------------------------------------------------
     function updateSpectrogramSection(data) {
-        const mainSpectrogramImage = document.getElementById('mainSpectrogramImage');
-        if (mainSpectrogramImage) {
-            mainSpectrogramImage.src = data.spectrogram_path;
-        }
+        const img = document.getElementById('mainSpectrogramImage');
+        if (img) img.src = data.spectrogram_path;
 
-        const downloadSpectrogramBtn = document.getElementById('downloadSpectrogramBtn');
-        if (downloadSpectrogramBtn) {
-            downloadSpectrogramBtn.addEventListener('click', function (e) {
+        const btn = document.getElementById('downloadSpectrogramBtn');
+        if (btn) {
+            btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 fetch(data.spectrogram_path)
-                    .then(response => response.blob())
+                    .then(r => r.blob())
                     .then(blob => {
-                        const url = URL.createObjectURL(blob);
+                        const url  = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
                         link.download = 'spectrogram_' + Date.now() + '.png';
@@ -550,8 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.body.removeChild(link);
                         URL.revokeObjectURL(url);
                     })
-                    .catch(error => {
-                        console.error('Download failed:', error);
+                    .catch(() => {
                         const link = document.createElement('a');
                         link.href = data.spectrogram_path;
                         link.download = 'spectrogram.png';
@@ -564,52 +476,34 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // ----------------------------------------------------------------
     function updateTechnicalSection(data) {
-        const mlScore = document.getElementById('mlScore');
-        const dlScore = document.getElementById('dlScore');
-
-        if (mlScore) {
-            mlScore.textContent = (Math.max(85, data.confidence_score - 5) + Math.random() * 3).toFixed(1) + '%';
-        }
-        if (dlScore) {
-            dlScore.textContent = (Math.min(98, data.confidence_score + 5) + Math.random() * 2).toFixed(1) + '%';
-        }
-
-        const timelineItems = document.querySelectorAll('.timeline-item');
-        timelineItems.forEach((item, index) => {
-            setTimeout(() => {
-                item.classList.add('completed');
-            }, index * 200);
+        document.querySelectorAll('.timeline-item').forEach((item, index) => {
+            setTimeout(() => item.classList.add('completed'), index * 200);
         });
     }
 
+    // ----------------------------------------------------------------
     function animateNumber(element, start, end, duration) {
-        const range = end - start;
+        const range     = end - start;
         const increment = range / (duration / 16);
-        let current = start;
-
+        let current     = start;
         const timer = setInterval(() => {
             current += increment;
-            if (current >= end) {
-                current = end;
-                clearInterval(timer);
-            }
+            if (current >= end) { current = end; clearInterval(timer); }
             element.textContent = Math.round(current) + '%';
         }, 16);
     }
 
+    // ----------------------------------------------------------------
     function resetToUpload() {
-        if (resultsHero) {
-            resultsHero.style.display = 'none';
-            resultsHero.classList.remove('real', 'fake');
-        }
-        if (resultsDashboard) resultsDashboard.style.display = 'none';
-        if (audioAnalysisSection) audioAnalysisSection.style.display = 'none';
+        if (resultsHero)            { resultsHero.style.display = 'none'; resultsHero.classList.remove('real', 'fake'); }
+        if (resultsDashboard)       resultsDashboard.style.display       = 'none';
+        if (audioAnalysisSection)   audioAnalysisSection.style.display   = 'none';
         if (spectrogramFullSection) spectrogramFullSection.style.display = 'none';
-        if (technicalSection) technicalSection.style.display = 'none';
-        if (actionsSection) actionsSection.style.display = 'none';
-        if (uploadSection) uploadSection.style.display = 'block';
-
+        if (technicalSection)       technicalSection.style.display       = 'none';
+        if (actionsSection)         actionsSection.style.display         = 'none';
+        if (uploadSection)          uploadSection.style.display          = 'block';
         resetUpload();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -617,74 +511,48 @@ document.addEventListener('DOMContentLoaded', function () {
     function downloadReport() {
         const predictionText = document.getElementById('predictionText');
         const confidenceText = document.getElementById('confidenceText');
-
-        const reportContent =
-            'AUTHENTIVOX AUDIO ANALYSIS REPORT\n' +
-            '==================================\n\n' +
-            'File: ' + (selectedFile ? selectedFile.name : 'Unknown') + '\n' +
-            'Date: ' + new Date().toLocaleString() + '\n\n' +
-            'ANALYSIS RESULT\n' +
-            '---------------\n' +
+        const content =
+            'AUTHENTIVOX AUDIO ANALYSIS REPORT\n==================================\n\n' +
+            'File: '       + (selectedFile ? selectedFile.name : 'Unknown') + '\n' +
+            'Date: '       + new Date().toLocaleString() + '\n\n' +
+            'ANALYSIS RESULT\n---------------\n' +
             'Prediction: ' + (predictionText ? predictionText.textContent : 'N/A') + '\n' +
             'Confidence: ' + (confidenceText ? confidenceText.textContent : 'N/A') + '\n\n' +
-            'DETECTION METHOD\n' +
-            '----------------\n' +
-            'Hybrid AI System combining:\n' +
-            '- Machine Learning (Random Forest)\n' +
-            '- Deep Learning (CNN)\n' +
-            '- Ensemble Fusion (Weighted Average)\n\n' +
-            'FEATURES ANALYZED\n' +
-            '-----------------\n' +
-            '- MFCC Coefficients (13)\n' +
-            '- Spectral Features\n' +
-            '- Mel Spectrogram Patterns\n' +
-            '- Temporal Characteristics\n\n' +
-            '---\n' +
-            'Report generated by AuthentiVox\n';
+            'DETECTION METHOD\n----------------\n' +
+            'Hybrid AI System combining:\n- Machine Learning (Random Forest)\n- Deep Learning (CNN)\n- Ensemble Fusion (Weighted Average)\n\n' +
+            'FEATURES ANALYZED\n-----------------\n- MFCC Coefficients (13)\n- Spectral Features\n- Mel Spectrogram Patterns\n- Temporal Characteristics\n\n' +
+            '---\nReport generated by AuthentiVox\n';
 
-        const blob = new Blob([reportContent], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'authentivox_report_' + Date.now() + '.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = 'authentivox_report_' + Date.now() + '.txt';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
 
     function shareResults() {
         const predictionText = document.getElementById('predictionText');
         const confidenceText = document.getElementById('confidenceText');
-
         if (navigator.share) {
             navigator.share({
                 title: 'AuthentiVox Analysis Results',
-                text:
-                    'My audio was detected as ' +
-                    (predictionText ? predictionText.textContent : 'N/A') +
-                    ' with ' +
-                    (confidenceText ? confidenceText.textContent : 'N/A') +
-                    ' confidence by AuthentiVox AI.'
+                text:  'My audio was detected as ' +
+                       (predictionText ? predictionText.textContent : 'N/A') +
+                       ' with ' + (confidenceText ? confidenceText.textContent : 'N/A') +
+                       ' confidence by AuthentiVox AI.',
             }).catch(err => console.log('Share failed:', err));
         } else {
             alert('Sharing not supported on this browser');
         }
     }
 
-    function showError(message) {
-        errorText.textContent = message;
-        errorMessage.style.display = 'flex';
-    }
-
-    function hideError() {
-        errorMessage.style.display = 'none';
-    }
+    function showError(message) { errorText.textContent = message; errorMessage.style.display = 'flex'; }
+    function hideError()        { errorMessage.style.display = 'none'; }
 
     function formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     }

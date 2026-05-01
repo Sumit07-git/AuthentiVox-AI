@@ -10,21 +10,21 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     stream=sys.stdout,
-    force=True
+    force=True,
 )
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
 
-app.config['SECRET_KEY'] = 'deepfake-detection-secret-key-2024'
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['SECRET_KEY']         = 'deepfake-detection-secret-key-2024'
+app.config['UPLOAD_FOLDER']      = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['ALLOWED_EXTENSIONS'] = {'wav', 'mp3', 'flac', 'ogg'}
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-predictor = None
+predictor       = None
 predictor_error = None
 
 
@@ -37,20 +37,28 @@ def initialize_models():
     sys.stdout.flush()
 
     try:
-        ml_model = 'models/ml_model/rf_classifier.pkl'
-        dl_model_keras = 'models/dl_model/cnn_model.keras'
-        dl_model_h5 = 'models/dl_model/cnn_model.h5'
-        scaler = 'models/ml_model/scaler.pkl'
+        # ✅ FIX: check rf_pipeline.pkl (primary) then rf_classifier.pkl (alias fallback)
+        ml_model_primary = 'models/ml_model/rf_pipeline.pkl'
+        ml_model_alias   = 'models/ml_model/rf_classifier.pkl'
+        dl_model_keras   = 'models/dl_model/cnn_model.keras'
+        dl_model_h5      = 'models/dl_model/cnn_model.h5'
+        scaler           = 'models/ml_model/scaler.pkl'
+
+        ml_model_exists = os.path.exists(ml_model_primary) or os.path.exists(ml_model_alias)
+        ml_model_path   = ml_model_primary if os.path.exists(ml_model_primary) else ml_model_alias
 
         logger.info("Checking for model files...")
-        logger.info(f"ML Model exists: {os.path.exists(ml_model)}")
-        logger.info(f"DL Model (.keras) exists: {os.path.exists(dl_model_keras)}")
-        logger.info(f"DL Model (.h5) exists: {os.path.exists(dl_model_h5)}")
-        logger.info(f"Scaler exists: {os.path.exists(scaler)}")
+        logger.info(f"ML Model (pipeline) exists: {os.path.exists(ml_model_primary)}")
+        logger.info(f"ML Model (alias)    exists: {os.path.exists(ml_model_alias)}")
+        logger.info(f"DL Model (.keras)   exists: {os.path.exists(dl_model_keras)}")
+        logger.info(f"DL Model (.h5)      exists: {os.path.exists(dl_model_h5)}")
+        logger.info(f"Scaler              exists: {os.path.exists(scaler)}")
         sys.stdout.flush()
 
-        if not os.path.exists(ml_model):
-            raise FileNotFoundError(f"ML model not found: {ml_model}")
+        if not ml_model_exists:
+            raise FileNotFoundError(
+                f"ML model not found at {ml_model_primary} or {ml_model_alias}"
+            )
         if not os.path.exists(scaler):
             raise FileNotFoundError(f"Scaler not found: {scaler}")
 
@@ -59,7 +67,7 @@ def initialize_models():
         logger.info("Loading HybridPredictor...")
         sys.stdout.flush()
 
-        predictor = HybridPredictor()
+        predictor = HybridPredictor(ml_model_path=ml_model_path)
 
         logger.info("✓ AI Models loaded successfully!")
         logger.info(f"  - ML Model: {'✓' if predictor.ml_model else '✗'}")
@@ -92,7 +100,8 @@ sys.stdout.flush()
 
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 
 def get_audio_duration(filepath):
@@ -137,11 +146,11 @@ def health_check():
             'status': 'healthy' if predictor else 'unhealthy',
             'models_loaded': {
                 'predictor': predictor is not None,
-                'ml_model': predictor.ml_model is not None if predictor else False,
-                'dl_model': predictor.dl_model is not None if predictor else False,
-                'scaler': predictor.scaler is not None if predictor else False,
+                'ml_model':  predictor.ml_model is not None if predictor else False,
+                'dl_model':  predictor.dl_model is not None if predictor else False,
+                'scaler':    predictor.scaler   is not None if predictor else False,
             },
-            'error': predictor_error
+            'error': predictor_error,
         }
         return jsonify(status), 200
     except Exception as e:
@@ -160,7 +169,7 @@ def upload_file():
             logger.error("Models not loaded")
             return jsonify({
                 'success': False,
-                'error': 'AI models not available. Server may be starting up. Please try again.'
+                'error':   'AI models not available. Server may be starting up. Please try again.',
             }), 503
 
         if 'audio_file' not in request.files:
@@ -174,7 +183,7 @@ def upload_file():
         if not allowed_file(file.filename):
             return jsonify({
                 'success': False,
-                'error': f'Invalid format. Allowed: {", ".join(app.config["ALLOWED_EXTENSIONS"])}'
+                'error':   f'Invalid format. Allowed: {", ".join(app.config["ALLOWED_EXTENSIONS"])}',
             }), 400
 
         logger.info(f"Processing: {file.filename}")
@@ -194,7 +203,7 @@ def upload_file():
         if duration > 60:
             return jsonify({
                 'success': False,
-                'error': f'Audio too long ({duration:.1f}s). Max 60 seconds.'
+                'error':   f'Audio too long ({duration:.1f}s). Max 60 seconds.',
             }), 400
 
         logger.info(f"Duration: {duration:.2f}s")
@@ -206,8 +215,8 @@ def upload_file():
             import matplotlib.pyplot as plt
             import librosa.display
 
-            y, sr = librosa.load(filepath, sr=22050, duration=30)
-            mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
+            y, sr       = librosa.load(filepath, sr=22050, duration=30)
+            mel_spec    = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
             mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
 
             spec_filename = f"spec_{filename.rsplit('.', 1)[0]}.png"
@@ -231,22 +240,23 @@ def upload_file():
         result = predictor.predict_hybrid(filepath, method='weighted_average')
         logger.info(f"Raw result: {result}")
 
-        if result['hybrid_prediction'] is None:
+        # ✅ FIX: Guard both hybrid_prediction AND hybrid_confidence for None
+        if result['hybrid_prediction'] is None or result['hybrid_confidence'] is None:
             logger.error("Both models failed to produce a prediction")
             return jsonify({
                 'success': False,
-                'error': 'Audio analysis failed. The file may be corrupted or in an unsupported format.'
+                'error':   'Audio analysis failed. The file may be corrupted or in an unsupported format.',
             }), 500
 
-        is_fake = (result['hybrid_prediction'] == 0)
+        is_fake          = (result['hybrid_prediction'] == 0)
         confidence_score = round(result['hybrid_confidence'] * 100, 2)
 
         response = {
-            'success': True,
-            'filename': filename,
-            'duration': round(duration, 2),
-            'prediction': 'FAKE' if is_fake else 'REAL',
-            'is_fake': is_fake,
+            'success':          True,
+            'filename':         filename,
+            'duration':         round(duration, 2),
+            'prediction':       'FAKE' if is_fake else 'REAL',
+            'is_fake':          is_fake,
             'confidence_score': confidence_score,
             'spectrogram_path': spectrogram_path,
             'debug': {
@@ -254,8 +264,8 @@ def upload_file():
                 'ml_confidence': round(result['ml_confidence'] * 100, 2) if result['ml_confidence'] is not None else None,
                 'dl_prediction': result['dl_prediction'],
                 'dl_confidence': round(result['dl_confidence'] * 100, 2) if result['dl_confidence'] is not None else None,
-                'method': result['method'],
-            }
+                'method':        result['method'],
+            },
         }
 
         logger.info(
