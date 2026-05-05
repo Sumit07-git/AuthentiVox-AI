@@ -78,8 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const shareResultsBtn = document.getElementById('shareResultsBtn');
     if (shareResultsBtn) shareResultsBtn.addEventListener('click', shareResults);
 
-    // ----------------------------------------------------------------
-    function handleFileSelect(file) {
+    async function handleFileSelect(file) {
         if (!file) return;
 
         const validTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/flac', 'audio/ogg'];
@@ -115,7 +114,6 @@ document.addEventListener('DOMContentLoaded', function () {
         hideError();
     }
 
-    // ----------------------------------------------------------------
     async function analyzeAudio() {
         if (!selectedFile || isAnalyzing) return;
 
@@ -141,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const errorData = await response.json();
                     errorMsg = errorData.error || errorMsg;
                 } catch (_) {
-                    if      (response.status === 502) errorMsg = 'Server is temporarily unavailable. Please try again.';
+                    if (response.status === 502) errorMsg = 'Server is temporarily unavailable. Please try again.';
                     else if (response.status === 413) errorMsg = 'File is too large for the server to process.';
                     else if (response.status === 504) errorMsg = 'Analysis timed out. Try a shorter audio file.';
                     else if (response.status === 503) errorMsg = 'Service unavailable. Please wait and try again.';
@@ -185,7 +183,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // ----------------------------------------------------------------
     function simulateProgress() {
         const progressFill = document.getElementById('progressFill');
         const steps = document.querySelectorAll('.loading-steps .step');
@@ -224,17 +221,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 100);
     }
 
-    // ----------------------------------------------------------------
     function saveToHistory(data) {
         try {
             let history = JSON.parse(localStorage.getItem('analysisHistory') || '[]');
             history.unshift({
-                id:         Date.now().toString(),
-                filename:   selectedFile ? selectedFile.name : 'Unknown',
-                filesize:   selectedFile ? selectedFile.size : 0,
-                is_fake:    data.is_fake,
+                id: Date.now().toString(),
+                filename: selectedFile ? selectedFile.name : 'Unknown',
+                filesize: selectedFile ? selectedFile.size : 0,
+                is_fake: data.is_fake,
                 confidence: data.confidence_score,
-                timestamp:  new Date().toISOString(),
+                timestamp: new Date().toISOString(),
             });
             if (history.length > 100) history = history.slice(0, 100);
             localStorage.setItem('analysisHistory', JSON.stringify(history));
@@ -243,13 +239,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // ----------------------------------------------------------------
     function displayResults(data) {
         const processingTime = ((Date.now() - analysisStartTime) / 1000).toFixed(1);
         saveToHistory(data);
 
-        if (loadingState)   loadingState.style.display   = 'none';
-        if (uploadSection)  uploadSection.style.display  = 'none';
+        if (loadingState) loadingState.style.display = 'none';
+        if (uploadSection) uploadSection.style.display = 'none';
 
         setTimeout(() => {
             if (resultsHero) { resultsHero.style.display = 'block'; updateHeroSection(data); }
@@ -273,11 +268,10 @@ document.addEventListener('DOMContentLoaded', function () {
         isAnalyzing = false;
     }
 
-    // ----------------------------------------------------------------
     function updateHeroSection(data) {
-        const heroBadge      = document.getElementById('heroBadge');
-        const heroLabel      = document.getElementById('heroLabel');
-        const heroTitle      = document.getElementById('heroTitle');
+        const heroBadge = document.getElementById('heroBadge');
+        const heroLabel = document.getElementById('heroLabel');
+        const heroTitle = document.getElementById('heroTitle');
         const heroConfidence = document.getElementById('heroConfidence');
 
         if (!heroBadge || !heroLabel || !heroConfidence || !heroTitle) return;
@@ -301,14 +295,13 @@ document.addEventListener('DOMContentLoaded', function () {
         heroConfidence.textContent = data.confidence_score + '%';
     }
 
-    // ----------------------------------------------------------------
     function updateDashboardSection(data, processingTime) {
-        const predictionText  = document.getElementById('predictionText');
-        const confidenceText  = document.getElementById('confidenceText');
+        const predictionText = document.getElementById('predictionText');
+        const confidenceText = document.getElementById('confidenceText');
         const processingTimeEl = document.getElementById('processingTime');
 
-        if (predictionText)   predictionText.textContent  = data.is_fake ? 'SYNTHETIC' : 'AUTHENTIC';
-        if (confidenceText)   confidenceText.textContent  = data.confidence_score + '%';
+        if (predictionText) predictionText.textContent = data.is_fake ? 'SYNTHETIC' : 'AUTHENTIC';
+        if (confidenceText) confidenceText.textContent = data.confidence_score + '%';
         if (processingTimeEl) processingTimeEl.textContent = processingTime + 's';
 
         const predictionStatIcon = document.querySelector('#resultsDashboard .stat-card:first-child .stat-icon');
@@ -319,8 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? 'fas fa-times-circle' : 'fas fa-check-circle';
         }
 
-        // Confidence circle
-        const circleProgress   = document.getElementById('circleProgress');
+        const circleProgress = document.getElementById('circleProgress');
         const circlePercentage = document.getElementById('circlePercentage');
 
         if (circleProgress && circlePercentage) {
@@ -359,19 +351,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const confidenceDescription = document.getElementById('confidenceDescription');
         if (confidenceDescription) {
-            if      (data.confidence_score >= 90) confidenceDescription.textContent = 'The AI model is highly confident in this prediction. The audio shows strong indicators.';
+            if (data.confidence_score >= 90) confidenceDescription.textContent = 'The AI model is highly confident in this prediction. The audio shows strong indicators.';
             else if (data.confidence_score >= 70) confidenceDescription.textContent = 'The AI model has good confidence in this prediction. Most indicators align with the result.';
-            else                                   confidenceDescription.textContent = 'The AI model has moderate confidence. Some indicators are ambiguous.';
+            else confidenceDescription.textContent = 'The AI model has moderate confidence. Some indicators are ambiguous.';
         }
 
-        // ✅ FIX: Use REAL ML/DL confidence values from backend debug field
         setTimeout(() => {
-            const mlFill  = document.getElementById('mlFill');
+            const mlFill = document.getElementById('mlFill');
             const mlValue = document.getElementById('mlValue');
-            const dlFill  = document.getElementById('dlFill');
+            const dlFill = document.getElementById('dlFill');
             const dlValue = document.getElementById('dlValue');
 
-            // data.debug.ml_confidence and dl_confidence are already in % (0-100) from backend
             const mlConf = (data.debug && data.debug.ml_confidence != null)
                 ? data.debug.ml_confidence
                 : null;
@@ -381,29 +371,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (mlFill && mlValue) {
                 if (mlConf !== null) {
-                    mlFill.style.width  = mlConf + '%';
+                    mlFill.style.width = mlConf + '%';
                     mlValue.textContent = mlConf.toFixed(1) + '%';
                 } else {
-                    mlFill.style.width  = '0%';
+                    mlFill.style.width = '0%';
                     mlValue.textContent = 'N/A';
                 }
             }
             if (dlFill && dlValue) {
                 if (dlConf !== null) {
-                    dlFill.style.width  = dlConf + '%';
+                    dlFill.style.width = dlConf + '%';
                     dlValue.textContent = dlConf.toFixed(1) + '%';
                 } else {
-                    dlFill.style.width  = '0%';
+                    dlFill.style.width = '0%';
                     dlValue.textContent = 'N/A';
                 }
             }
         }, 800);
     }
 
-    // ----------------------------------------------------------------
     function updateAudioAnalysisSection(data) {
-        const analysisFileName  = document.getElementById('analysisFileName');
-        const analysisFileSize  = document.getElementById('analysisFileSize');
+        const analysisFileName = document.getElementById('analysisFileName');
+        const analysisFileSize = document.getElementById('analysisFileSize');
         const resultsAudioPlayer = document.getElementById('resultsAudioPlayer');
 
         if (analysisFileName) analysisFileName.textContent = selectedFile.name;
@@ -412,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (resultsAudioPlayer) {
             resultsAudioPlayer.src = URL.createObjectURL(selectedFile);
             resultsAudioPlayer.addEventListener('loadedmetadata', function () {
-                const dur     = Math.floor(resultsAudioPlayer.duration);
+                const dur = Math.floor(resultsAudioPlayer.duration);
                 const minutes = Math.floor(dur / 60);
                 const seconds = dur % 60;
                 const el = document.getElementById('audioDuration');
@@ -421,14 +410,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const indicatorDescriptions = [
-            { real: 'Natural voice characteristics detected',  fake: 'Unnatural frequency patterns found'       },
-            { real: 'Consistent energy distribution',          fake: 'Irregular energy distribution detected'   },
-            { real: 'No synthetic markers found',              fake: 'Synthetic markers detected'               },
-            { real: 'Authentic vocal patterns',                fake: 'Unnatural vocal patterns'                 },
+            { real: 'Natural voice characteristics detected', fake: 'Unnatural frequency patterns found' },
+            { real: 'Consistent energy distribution', fake: 'Irregular energy distribution detected' },
+            { real: 'No synthetic markers found', fake: 'Synthetic markers detected' },
+            { real: 'Authentic vocal patterns', fake: 'Unnatural vocal patterns' },
         ];
 
         document.querySelectorAll('.indicator-item').forEach((indicator, index) => {
-            const badge   = indicator.querySelector('.indicator-badge');
+            const badge = indicator.querySelector('.indicator-badge');
             const content = indicator.querySelector('.indicator-content p');
             if (!badge || !content || !indicatorDescriptions[index]) return;
 
@@ -442,7 +431,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ----------------------------------------------------------------
     function updateSpectrogramSection(data) {
         const img = document.getElementById('mainSpectrogramImage');
         if (img) img.src = data.spectrogram_path;
@@ -454,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetch(data.spectrogram_path)
                     .then(r => r.blob())
                     .then(blob => {
-                        const url  = URL.createObjectURL(blob);
+                        const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
                         link.download = 'spectrogram_' + Date.now() + '.png';
@@ -476,18 +464,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // ----------------------------------------------------------------
     function updateTechnicalSection(data) {
         document.querySelectorAll('.timeline-item').forEach((item, index) => {
             setTimeout(() => item.classList.add('completed'), index * 200);
         });
     }
 
-    // ----------------------------------------------------------------
     function animateNumber(element, start, end, duration) {
-        const range     = end - start;
+        const range = end - start;
         const increment = range / (duration / 16);
-        let current     = start;
+        let current = start;
         const timer = setInterval(() => {
             current += increment;
             if (current >= end) { current = end; clearInterval(timer); }
@@ -495,15 +481,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 16);
     }
 
-    // ----------------------------------------------------------------
     function resetToUpload() {
-        if (resultsHero)            { resultsHero.style.display = 'none'; resultsHero.classList.remove('real', 'fake'); }
-        if (resultsDashboard)       resultsDashboard.style.display       = 'none';
-        if (audioAnalysisSection)   audioAnalysisSection.style.display   = 'none';
+        if (resultsHero) { resultsHero.style.display = 'none'; resultsHero.classList.remove('real', 'fake'); }
+        if (resultsDashboard) resultsDashboard.style.display = 'none';
+        if (audioAnalysisSection) audioAnalysisSection.style.display = 'none';
         if (spectrogramFullSection) spectrogramFullSection.style.display = 'none';
-        if (technicalSection)       technicalSection.style.display       = 'none';
-        if (actionsSection)         actionsSection.style.display         = 'none';
-        if (uploadSection)          uploadSection.style.display          = 'block';
+        if (technicalSection) technicalSection.style.display = 'none';
+        if (actionsSection) actionsSection.style.display = 'none';
+        if (uploadSection) uploadSection.style.display = 'block';
         resetUpload();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -513,8 +498,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const confidenceText = document.getElementById('confidenceText');
         const content =
             'AUTHENTIVOX AUDIO ANALYSIS REPORT\n==================================\n\n' +
-            'File: '       + (selectedFile ? selectedFile.name : 'Unknown') + '\n' +
-            'Date: '       + new Date().toLocaleString() + '\n\n' +
+            'File: ' + (selectedFile ? selectedFile.name : 'Unknown') + '\n' +
+            'Date: ' + new Date().toLocaleString() + '\n\n' +
             'ANALYSIS RESULT\n---------------\n' +
             'Prediction: ' + (predictionText ? predictionText.textContent : 'N/A') + '\n' +
             'Confidence: ' + (confidenceText ? confidenceText.textContent : 'N/A') + '\n\n' +
@@ -524,8 +509,8 @@ document.addEventListener('DOMContentLoaded', function () {
             '---\nReport generated by AuthentiVox\n';
 
         const blob = new Blob([content], { type: 'text/plain' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
         a.href = url; a.download = 'authentivox_report_' + Date.now() + '.txt';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(url);
@@ -537,10 +522,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (navigator.share) {
             navigator.share({
                 title: 'AuthentiVox Analysis Results',
-                text:  'My audio was detected as ' +
-                       (predictionText ? predictionText.textContent : 'N/A') +
-                       ' with ' + (confidenceText ? confidenceText.textContent : 'N/A') +
-                       ' confidence by AuthentiVox AI.',
+                text: 'My audio was detected as ' +
+                    (predictionText ? predictionText.textContent : 'N/A') +
+                    ' with ' + (confidenceText ? confidenceText.textContent : 'N/A') +
+                    ' confidence by AuthentiVox AI.',
             }).catch(err => console.log('Share failed:', err));
         } else {
             alert('Sharing not supported on this browser');
@@ -548,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showError(message) { errorText.textContent = message; errorMessage.style.display = 'flex'; }
-    function hideError()        { errorMessage.style.display = 'none'; }
+    function hideError() { errorMessage.style.display = 'none'; }
 
     function formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';

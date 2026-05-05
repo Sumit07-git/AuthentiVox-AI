@@ -1,12 +1,3 @@
-"""
-Deep Learning Model Trainer — Fixed Version
-Fixes:
-  1. CRITICAL: Shuffle permutation now applied to BOTH X_train and y_train_aug (was X only)
-  2. OVERFITTING: augment_factor reduced 3→2, val_size increased 15%→20%
-  3. Added per-class count print for label verification
-  4. Added p_real distribution check and train/val gap overfitting check
-"""
-
 import os
 import sys
 import numpy as np
@@ -20,28 +11,40 @@ from tensorflow.keras.callbacks import (
 )
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.utils.class_weight import compute_class_weight
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
 from utils.spectrogram_generator import SpectrogramGenerator
 
+CLIP_DURATION = 10
+
 
 def augment_spectrogram(spec):
     spec = spec.copy()
-    noise = np.random.normal(0, 0.01, spec.shape)
+
+    noise = np.random.normal(0, 0.005, spec.shape)
     spec = np.clip(spec + noise, 0.0, 1.0)
-    t_mask = np.random.randint(5, 16)
-    t_start = np.random.randint(0, spec.shape[1] - t_mask)
-    spec[:, t_start:t_start + t_mask, :] = 0.0
-    f_mask = np.random.randint(3, 11)
-    f_start = np.random.randint(0, spec.shape[0] - f_mask)
-    spec[f_start:f_start + f_mask, :, :] = 0.0
+
+    if np.random.rand() < 0.5:
+        t_mask = np.random.randint(5, 20)
+        t_start = np.random.randint(0, max(1, spec.shape[1] - t_mask))
+        spec[:, t_start:t_start + t_mask, :] = 0.0
+
+    if np.random.rand() < 0.5:
+        f_mask = np.random.randint(3, 15)
+        f_start = np.random.randint(0, max(1, spec.shape[0] - f_mask))
+        spec[f_start:f_start + f_mask, :, :] = 0.0
+
+    if np.random.rand() < 0.5:
+        gain = np.random.uniform(0.8, 1.2)
+        spec = np.clip(spec * gain, 0.0, 1.0)
+
     return spec
 
 
 def augment_dataset(X, y, factor=1):
-    """Returns (X_aug, y_aug). factor=1 → original + 1 copy = 2x total."""
     X_aug, y_aug = [X], [y]
     for _ in range(factor):
         aug = np.array([augment_spectrogram(s) for s in X])
@@ -52,39 +55,88 @@ def augment_dataset(X, y, factor=1):
 
 def build_cnn_model(input_shape=(128, 128, 1), l2=1e-4):
     reg = regularizers.l2(l2)
+    init = keras.initializers.he_normal()
     inp = keras.Input(shape=input_shape)
 
-    x = layers.Conv2D(32, (3, 3), padding='same', kernel_regularizer=reg)(inp)
+    x = layers.Conv2D(
+        32,
+        (3, 3),
+        padding='same',
+        kernel_regularizer=reg,
+        kernel_initializer=init,
+    )(inp)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-    x = layers.Conv2D(32, (3, 3), padding='same', kernel_regularizer=reg)(x)
+    x = layers.Conv2D(
+        32,
+        (3, 3),
+        padding='same',
+        kernel_regularizer=reg,
+        kernel_initializer=init,
+    )(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     x = layers.MaxPooling2D((2, 2))(x)
     x = layers.Dropout(0.25)(x)
 
-    x = layers.Conv2D(64, (3, 3), padding='same', kernel_regularizer=reg)(x)
+    x = layers.Conv2D(
+        64,
+        (3, 3),
+        padding='same',
+        kernel_regularizer=reg,
+        kernel_initializer=init,
+    )(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-    x = layers.Conv2D(64, (3, 3), padding='same', kernel_regularizer=reg)(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.MaxPooling2D((2, 2))(x)
-    x = layers.Dropout(0.25)(x)
-
-    x = layers.Conv2D(128, (3, 3), padding='same', kernel_regularizer=reg)(x)
+    x = layers.Conv2D(
+        64,
+        (3, 3),
+        padding='same',
+        kernel_regularizer=reg,
+        kernel_initializer=init,
+    )(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     x = layers.MaxPooling2D((2, 2))(x)
     x = layers.Dropout(0.30)(x)
 
+    x = layers.Conv2D(
+        128,
+        (3, 3),
+        padding='same',
+        kernel_regularizer=reg,
+        kernel_initializer=init,
+    )(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.Conv2D(
+        128,
+        (3, 3),
+        padding='same',
+        kernel_regularizer=reg,
+        kernel_initializer=init,
+    )(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.MaxPooling2D((2, 2))(x)
+    x = layers.Dropout(0.35)(x)
+
     x = layers.GlobalAveragePooling2D()(x)
-    x = layers.Dense(128, kernel_regularizer=reg)(x)
+    x = layers.Dense(256, kernel_regularizer=reg, kernel_initializer=init)(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     x = layers.Dropout(0.50)(x)
+    x = layers.Dense(64, kernel_regularizer=reg, kernel_initializer=init)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.Dropout(0.30)(x)
 
-    out = layers.Dense(1, activation='sigmoid')(x)
+    out = layers.Dense(
+        1,
+        activation='sigmoid',
+        kernel_initializer=keras.initializers.glorot_uniform(),
+    )(x)
+
     model = keras.Model(inp, out)
     model.compile(
         optimizer=keras.optimizers.Adam(learning_rate=1e-3),
@@ -100,14 +152,14 @@ def build_cnn_model(input_shape=(128, 128, 1), l2=1e-4):
 
 
 class CNNModelTrainer:
-
     def __init__(self, input_shape=(128, 128, 1)):
         self.input_shape = input_shape
         self.model = None
         self.spec_generator = SpectrogramGenerator(sr=22050, n_mels=128)
-        self.CLIP_DURATION = 3
+        self.clip_duration = CLIP_DURATION
 
     def load_data(self, real_audio_dir, fake_audio_dir, target_shape=(128, 128)):
+        print(f"Using clip duration: {self.clip_duration}s (must match _DL_CLIP_DURATION in hybrid_predictor.py)")
         print("Loading real audio files...")
         real_files = [
             os.path.join(real_audio_dir, f)
@@ -125,27 +177,27 @@ class CNNModelTrainer:
         if not fake_files:
             raise ValueError(f"No audio files found in {fake_audio_dir}")
 
-        # ✅ Explicit: 1=REAL, 0=FAKE
-        all_files  = real_files + fake_files
+        all_files = real_files + fake_files
         all_labels = [1] * len(real_files) + [0] * len(fake_files)
 
         print(f"Total: {len(all_files)} files  (Real=1: {len(real_files)}, Fake=0: {len(fake_files)})")
-        print("Generating spectrograms (this may take a while)...")
+        print("Generating spectrograms — this may take a while...")
 
         specs, labels = [], []
         for path, lbl in zip(all_files, all_labels):
-            mel = self.spec_generator.generate_melspectrogram(path, duration=self.CLIP_DURATION)
+            mel = self.spec_generator.generate_melspectrogram(
+                path, duration=self.clip_duration
+            )
             if mel is not None:
                 specs.append(self.spec_generator.prepare_for_cnn(mel, target_shape))
                 labels.append(lbl)
 
         if not specs:
-            raise ValueError("No spectrograms were generated — check audio files.")
+            raise ValueError("No spectrograms generated — check audio files.")
 
         X = np.array(specs, dtype=np.float32)
         y = np.array(labels, dtype=np.int32)
 
-        # ✅ Print class distribution for verification
         unique, counts = np.unique(y, return_counts=True)
         print(f"Spectrogram array: {X.shape},  labels: {y.shape}")
         for cls, cnt in zip(unique, counts):
@@ -158,14 +210,15 @@ class CNNModelTrainer:
         X,
         y,
         test_size=0.15,
-        val_size=0.20,        # ✅ increased 0.15→0.20 for more reliable val signal
-        epochs=80,
+        val_size=0.20,
+        epochs=100,
         batch_size=32,
-        augment_factor=2,     # ✅ reduced 3→2 to reduce overfitting risk
+        augment_factor=1,
     ):
         X_trainval, X_test, y_trainval, y_test = train_test_split(
             X, y, test_size=test_size, random_state=42, stratify=y
         )
+
         X_train_clean, X_val, y_train_clean, y_val = train_test_split(
             X_trainval,
             y_trainval,
@@ -176,23 +229,26 @@ class CNNModelTrainer:
 
         print(f"\nSplit sizes:")
         print(f"  Train (before aug): {len(X_train_clean)}")
-        print(f"  Validation:         {len(X_val)}")
+        print(f"  Validation (clean): {len(X_val)}")
         print(f"  Test  (held-out):   {len(X_test)}")
 
         print(f"\nAugmenting training set (×{augment_factor + 1})...")
-        # ✅ FIX: Use returned y from augment_dataset (not np.tile separately)
         X_train, y_train_aug = augment_dataset(X_train_clean, y_train_clean, factor=augment_factor)
 
-        # ✅ FIX: Apply SAME permutation to both X and y (was X-only before → label mismatch)
         perm = np.random.permutation(len(X_train))
-        X_train     = X_train[perm]
+        X_train = X_train[perm]
         y_train_aug = y_train_aug[perm]
         print(f"  Train (after aug):  {len(X_train)}")
 
-        # Verify augmented label balance
         unique, counts = np.unique(y_train_aug, return_counts=True)
         for cls, cnt in zip(unique, counts):
             print(f"  Aug label {cls} ({'REAL' if cls==1 else 'FAKE'}): {cnt}")
+
+        cw_values = compute_class_weight(
+            class_weight='balanced', classes=np.unique(y_train_aug), y=y_train_aug
+        )
+        class_weight_dict = {int(k): float(v) for k, v in zip(np.unique(y_train_aug), cw_values)}
+        print(f"\nClass weights: {class_weight_dict}")
 
         self.model = build_cnn_model(self.input_shape)
         print("\nModel summary:")
@@ -203,7 +259,7 @@ class CNNModelTrainer:
         callbacks = [
             EarlyStopping(
                 monitor='val_auc',
-                patience=15,
+                patience=10,
                 mode='max',
                 restore_best_weights=True,
                 verbose=1,
@@ -218,7 +274,7 @@ class CNNModelTrainer:
             ReduceLROnPlateau(
                 monitor='val_loss',
                 factor=0.5,
-                patience=7,
+                patience=5,
                 min_lr=1e-6,
                 verbose=1,
             ),
@@ -232,10 +288,10 @@ class CNNModelTrainer:
             epochs=epochs,
             batch_size=batch_size,
             callbacks=callbacks,
+            class_weight=class_weight_dict,
             verbose=1,
         )
 
-        # ------ Evaluation ------
         print("\n" + "=" * 55)
         print("EVALUATION ON HELD-OUT TEST SET")
         print("=" * 55)
@@ -247,7 +303,6 @@ class CNNModelTrainer:
         y_prob = self.model.predict(X_test, verbose=0).flatten()
         y_pred = (y_prob > 0.5).astype(int)
 
-        # ✅ p_real distribution check
         print(f"\np_real on test — min={y_prob.min():.3f}  max={y_prob.max():.3f}  mean={y_prob.mean():.3f}")
         if y_prob.max() < 0.6:
             print("🚨 WARNING: Model never predicts REAL with high confidence — possible label inversion!")
@@ -258,35 +313,27 @@ class CNNModelTrainer:
         if len(unique_preds) == 1:
             print(f"\n🚨 WARNING: model predicts ONLY class {unique_preds[0]} on test set!")
         else:
-            print("\n✓ Model predicts both classes on the test set — looks healthy.")
+            print("\n✓ Model predicts both classes on the test set.")
 
         print("\nClassification Report:")
         print(classification_report(y_test, y_pred, target_names=['Fake(0)', 'Real(1)']))
         print("Confusion Matrix (rows=true, cols=pred):")
         cm = confusion_matrix(y_test, y_pred)
         print(cm)
-        print(
-            f"  TN={cm[0,0]}  FP={cm[0,1]}\n"
-            f"  FN={cm[1,0]}  TP={cm[1,1]}"
-        )
+        print(f"  TN={cm[0,0]}  FP={cm[0,1]}\n  FN={cm[1,0]}  TP={cm[1,1]}")
 
-        # ✅ Overfitting check
-        final_train_acc = history.history['accuracy'][-1]
-        final_val_acc   = history.history['val_accuracy'][-1]
-        gap = final_train_acc - final_val_acc
-        print(f"\nOverfit check — train_acc={final_train_acc:.4f}  val_acc={final_val_acc:.4f}  gap={gap:.4f}")
-        if gap > 0.10:
-            print("⚠ Possible overfitting (gap > 0.10). Consider more data or stronger dropout.")
+        best_epoch = np.argmax(history.history['val_auc'])
+        train_acc = history.history['accuracy'][best_epoch]
+        val_acc = history.history['val_accuracy'][best_epoch]
+        gap = train_acc - val_acc
+        print(
+            f"\nOverfit check (best epoch {best_epoch+1}) — "
+            f"train_acc={train_acc:.4f}  val_acc={val_acc:.4f}  gap={gap:.4f}"
+        )
+        if gap > 0.08:
+            print("⚠ Possible overfitting (gap > 0.08). Try more data or stronger dropout.")
         else:
             print("✓ Train/val accuracy gap is acceptable.")
-
-        random_spec = np.random.rand(1, *self.input_shape).astype(np.float32)
-        random_pred = float(self.model.predict(random_spec, verbose=0)[0][0])
-        print(f"\nPrediction on random noise (should be ~0.5): {random_pred:.4f}")
-        if random_pred < 0.1 or random_pred > 0.9:
-            print("  ⚠ Extreme output on noise — consider more regularisation.")
-        else:
-            print("  ✓ Reasonable uncertainty on out-of-distribution input.")
 
         return history, {
             'accuracy': results[1],
@@ -317,7 +364,7 @@ class CNNModelTrainer:
             print(f"  Could not save .h5 (OK): {e}")
 
         print("Validating saved model...")
-        loaded  = keras.models.load_model(keras_path, compile=False)
+        loaded = keras.models.load_model(keras_path, compile=False)
         test_in = np.random.rand(1, *self.input_shape).astype(np.float32)
         test_out = float(loaded.predict(test_in, verbose=0)[0][0])
         print(f"  Round-trip prediction on noise: {test_out:.4f}")
@@ -326,8 +373,10 @@ class CNNModelTrainer:
 
 def main():
     print("=" * 55)
-    print("DEEP LEARNING MODEL TRAINING (FIXED)")
+    print("DEEP LEARNING MODEL TRAINING (FULLY FIXED)")
     print("=" * 55)
+    print(f"Clip duration for training: {CLIP_DURATION}s")
+    print("This MUST match _DL_CLIP_DURATION in utils/hybrid_predictor.py")
 
     trainer = CNNModelTrainer(input_shape=(128, 128, 1))
     real_dir = 'data/train/real'
@@ -340,7 +389,13 @@ def main():
 
     try:
         X, y = trainer.load_data(real_dir, fake_dir)
-        history, metrics = trainer.train(X, y, epochs=50, batch_size=32, augment_factor=1)
+        history, metrics = trainer.train(
+            X,
+            y,
+            epochs=100,
+            batch_size=32,
+            augment_factor=1,
+        )
         trainer.save_model()
 
         print("\n" + "=" * 55)
