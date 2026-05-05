@@ -40,8 +40,8 @@ def augment_spectrogram(spec):
     return spec
 
 
-def augment_dataset(X, y, factor=2):
-    """Returns (X_aug, y_aug). factor=2 → original + 2 copies = 3x total."""
+def augment_dataset(X, y, factor=1):
+    """Returns (X_aug, y_aug). factor=1 → original + 1 copy = 2x total."""
     X_aug, y_aug = [X], [y]
     for _ in range(factor):
         aug = np.array([augment_spectrogram(s) for s in X])
@@ -340,7 +340,7 @@ def main():
 
     try:
         X, y = trainer.load_data(real_dir, fake_dir)
-        history, metrics = trainer.train(X, y, epochs=80, batch_size=32, augment_factor=2)
+        history, metrics = trainer.train(X, y, epochs=50, batch_size=32, augment_factor=1)
         trainer.save_model()
 
         print("\n" + "=" * 55)
